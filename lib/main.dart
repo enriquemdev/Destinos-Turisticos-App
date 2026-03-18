@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
-void main() {
+import 'features/destinations/data/datasources/local_datasource.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await DatabaseHelper().init();
   runApp(const MyApp());
 }
 
