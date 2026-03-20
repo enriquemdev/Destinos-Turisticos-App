@@ -17,6 +17,7 @@ _Destination _$DestinationFromJson(Map<String, dynamic> json) => _Destination(
   address: json['address'] as String?,
   highlight: json['highlight'] as String?,
   aiTips: json['aiTips'] as String?,
+  createdAt: (json['createdAt'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$DestinationToJson(_Destination instance) =>
@@ -31,4 +32,5 @@ Map<String, dynamic> _$DestinationToJson(_Destination instance) =>
       'address': instance.address,
       'highlight': instance.highlight,
       'aiTips': instance.aiTips,
+      'createdAt': instance.createdAt,
     };

@@ -16,10 +16,9 @@ class NearbyPoi {
   final double longitude;
   final double? distanceMeters;
 
-  /// Human-readable category derived from kinds.
-  String get displayCategory => _toCategory(kinds);
+  // Derived display helpers
 
-  /// Emoji icon for UI.
+  String get displayCategory => _toCategory(kinds);
   String get emoji => _toEmoji(kinds);
 
   String get distanceLabel {
@@ -28,6 +27,42 @@ class NearbyPoi {
     if (d < 1000) return '${d.round()} m';
     return '${(d / 1000).toStringAsFixed(1)} km';
   }
+
+  // SQLite persistence
+
+  Map<String, dynamic> toMap(String destinationXid) => {
+        'destinationXid': destinationXid,
+        'name': name,
+        'kinds': kinds,
+        'latitude': latitude,
+        'longitude': longitude,
+        'distanceMeters': distanceMeters,
+      };
+
+  factory NearbyPoi.fromMap(Map<String, dynamic> map) => NearbyPoi(
+        name: map['name'] as String,
+        kinds: (map['kinds'] as String?) ?? '',
+        latitude: (map['latitude'] as num).toDouble(),
+        longitude: (map['longitude'] as num).toDouble(),
+        distanceMeters: (map['distanceMeters'] as num?)?.toDouble(),
+      );
+
+  factory NearbyPoi.fromOtmJson(Map<String, dynamic> json) {
+    final point = json['point'] as Map<String, dynamic>?;
+    final lat = (point?['lat'] as num?)?.toDouble() ?? 0.0;
+    final lon = (point?['lon'] as num?)?.toDouble() ?? 0.0;
+    final dist = (json['dist'] as num?)?.toDouble();
+
+    return NearbyPoi(
+      name: (json['name'] as String?)?.trim() ?? 'Sin nombre',
+      kinds: (json['kinds'] as String?) ?? '',
+      latitude: lat,
+      longitude: lon,
+      distanceMeters: dist,
+    );
+  }
+
+  // Category / emoji derivation
 
   static String _toCategory(String kinds) {
     final k = kinds.toLowerCase();
@@ -48,29 +83,18 @@ class NearbyPoi {
 
   static String _toEmoji(String kinds) {
     final k = kinds.toLowerCase();
-    if (k.contains('restaurant') || k.contains('food') || k.contains('cafe')) return '🍽️';
+    if (k.contains('restaurant') || k.contains('food') || k.contains('cafe')) {
+      return '🍽️';
+    }
     if (k.contains('hotel') || k.contains('accommodation')) return '🏨';
-    if (k.contains('museum') || k.contains('theatre') || k.contains('cultural')) return '🏛️';
+    if (k.contains('museum') || k.contains('theatre') || k.contains('cultural')) {
+      return '🏛️';
+    }
     if (k.contains('historic') || k.contains('monument')) return '🏰';
     if (k.contains('natural') || k.contains('park')) return '🌿';
     if (k.contains('beach')) return '🏖️';
     if (k.contains('sport') || k.contains('amusement')) return '⚡';
     if (k.contains('shop') || k.contains('market')) return '🛍️';
     return '📍';
-  }
-
-  factory NearbyPoi.fromOtmJson(Map<String, dynamic> json) {
-    final point = json['point'] as Map<String, dynamic>?;
-    final lat = (point?['lat'] as num?)?.toDouble() ?? 0.0;
-    final lon = (point?['lon'] as num?)?.toDouble() ?? 0.0;
-    final dist = (json['dist'] as num?)?.toDouble();
-
-    return NearbyPoi(
-      name: (json['name'] as String?)?.trim() ?? 'Sin nombre',
-      kinds: (json['kinds'] as String?) ?? '',
-      latitude: lat,
-      longitude: lon,
-      distanceMeters: dist,
-    );
   }
 }

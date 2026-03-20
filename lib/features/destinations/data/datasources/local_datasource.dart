@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../models/destination_model.dart';
+import '../models/nearby_poi.dart';
 
 class DatabaseHelper {
   DatabaseHelper._();
@@ -28,44 +29,62 @@ class DatabaseHelper {
   }
 
   Future<void> _onCreate(Database database, int version) async {
-    await _createTable(database);
+    await _createDestinationsTable(database);
+    await _createNearbyPoisTable(database);
   }
 
-  Future<void> _onUpgrade(
-    Database database,
-    int oldVersion,
-    int newVersion,
-  ) async {
-    await database.execute('DROP TABLE IF EXISTS $tableDestinations');
-    await _createTable(database);
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    await db.execute('DROP TABLE IF EXISTS $tableDestinations');
+    await db.execute('DROP TABLE IF EXISTS $tableNearbyPois');
+    await _createDestinationsTable(db);
+    await _createNearbyPoisTable(db);
   }
 
-  Future<void> _createTable(Database database) async {
+  Future<void> _createDestinationsTable(Database database) async {
     await database.execute('''
       CREATE TABLE $tableDestinations (
-        xid TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
+        xid        TEXT    PRIMARY KEY,
+        name       TEXT    NOT NULL,
         description TEXT,
-        imageUrl TEXT,
-        category TEXT NOT NULL,
-        latitude REAL NOT NULL,
-        longitude REAL NOT NULL,
-        address TEXT,
-        highlight TEXT,
-        aiTips TEXT
+        imageUrl   TEXT,
+        category   TEXT    NOT NULL,
+        latitude   REAL    NOT NULL,
+        longitude  REAL    NOT NULL,
+        address    TEXT,
+        highlight  TEXT,
+        aiTips     TEXT,
+        createdAt  INTEGER NOT NULL DEFAULT 0
       )
     ''');
   }
 
-  // Write
+  Future<void> _createNearbyPoisTable(Database database) async {
+    await database.execute('''
+      CREATE TABLE $tableNearbyPois (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        destinationXid  TEXT    NOT NULL,
+        name            TEXT    NOT NULL,
+        kinds           TEXT,
+        latitude        REAL    NOT NULL,
+        longitude       REAL    NOT NULL,
+        distanceMeters  REAL,
+        FOREIGN KEY (destinationXid) REFERENCES $tableDestinations(xid) ON DELETE CASCADE
+      )
+    ''');
+  }
+
+  // ── Destinations ────────────────────────────────────────────────────────────
 
   Future<void> insertAll(List<Destination> destinations) async {
     final database = await db;
+    final now = DateTime.now().millisecondsSinceEpoch;
     final batch = database.batch();
     for (final d in destinations) {
+      final map = d.toMap();
+      map['createdAt'] = now; // always stamp fresh fetches
       batch.insert(
         tableDestinations,
-        d.toMap(),
+        map,
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
     }
@@ -85,15 +104,14 @@ class DatabaseHelper {
   Future<void> deleteAll() async {
     final database = await db;
     await database.delete(tableDestinations);
+    await database.delete(tableNearbyPois);
   }
-
-  // Read
 
   Future<List<Destination>> getPage(int limit, int offset) async {
     final database = await db;
     final rows = await database.query(
       tableDestinations,
-      orderBy: 'name ASC',
+      orderBy: 'createdAt DESC',   // newest batch first
       limit: limit,
       offset: offset,
     );
@@ -108,13 +126,9 @@ class DatabaseHelper {
     return (result.first['count'] as int?) ?? 0;
   }
 
-  /// Returns all stored destination names for deduplication.
   Future<List<String>> getAllNames() async {
     final database = await db;
-    final rows = await database.query(
-      tableDestinations,
-      columns: ['name'],
-    );
+    final rows = await database.query(tableDestinations, columns: ['name']);
     return rows.map((r) => r['name'] as String).toList();
   }
 
@@ -136,8 +150,48 @@ class DatabaseHelper {
       tableDestinations,
       where: 'name LIKE ? OR category LIKE ? OR address LIKE ?',
       whereArgs: [like, like, like],
-      orderBy: 'name ASC',
+      orderBy: 'createdAt DESC',
     );
     return rows.map(Destination.fromMap).toList();
+  }
+
+  // ── Nearby POIs ─────────────────────────────────────────────────────────────
+
+  Future<void> insertNearbyPois(
+    String destinationXid,
+    List<NearbyPoi> pois,
+  ) async {
+    final database = await db;
+    // Remove stale entries first so a refresh gets clean data
+    await database.delete(
+      tableNearbyPois,
+      where: 'destinationXid = ?',
+      whereArgs: [destinationXid],
+    );
+    final batch = database.batch();
+    for (final poi in pois) {
+      batch.insert(tableNearbyPois, poi.toMap(destinationXid));
+    }
+    await batch.commit(noResult: true);
+  }
+
+  Future<List<NearbyPoi>> getNearbyPois(String destinationXid) async {
+    final database = await db;
+    final rows = await database.query(
+      tableNearbyPois,
+      where: 'destinationXid = ?',
+      whereArgs: [destinationXid],
+      orderBy: 'distanceMeters ASC',
+    );
+    return rows.map(NearbyPoi.fromMap).toList();
+  }
+
+  Future<bool> hasNearbyPois(String destinationXid) async {
+    final database = await db;
+    final result = await database.rawQuery(
+      'SELECT COUNT(*) as count FROM $tableNearbyPois WHERE destinationXid = ?',
+      [destinationXid],
+    );
+    return ((result.first['count'] as int?) ?? 0) > 0;
   }
 }

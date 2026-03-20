@@ -13,11 +13,13 @@ class NearbyPoisSection extends StatefulWidget {
   const NearbyPoisSection({
     super.key,
     required this.store,
+    required this.destinationXid,
     required this.latitude,
     required this.longitude,
   });
 
   final DestinationStore store;
+  final String destinationXid;
   final double latitude;
   final double longitude;
 
@@ -30,7 +32,8 @@ class _NearbyPoisSectionState extends State<NearbyPoisSection> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      widget.store.loadNearbyPois(widget.latitude, widget.longitude);
+      widget.store.loadNearbyPois(
+          widget.destinationXid, widget.latitude, widget.longitude);
     });
   }
 

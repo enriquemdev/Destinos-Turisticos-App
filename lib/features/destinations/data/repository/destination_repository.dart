@@ -9,13 +9,15 @@ import '../models/nearby_poi.dart';
 
 /// Offline-first repository.
 ///
-/// Main flow:
-///   1. Read from SQLite (paginated).
-///   2. When SQLite is exhausted AND user scrolls more → fetch next Gemini batch.
-///   3. Gemini returns 10 fully-detailed destinations → stored in SQLite → served.
-///   4. Deduplication: pass existing names to Gemini so it never repeats.
+/// Destinations flow:
+///   1. Read SQLite (paginated, newest first).
+///   2. When SQLite exhausted AND online → fetch Gemini batch → save → serve.
+///   3. Gemini receives exclusion list of existing names → no duplicates.
 ///
-/// OTM is only used for the "Explorar Alrededores" feature (1 radius call).
+/// Nearby POIs flow:
+///   1. Read SQLite cache for destinationXid.
+///   2. If empty AND online → fetch OTM radius → save → serve.
+///   3. Fully offline if previously fetched.
 class DestinationRepository {
   DestinationRepository({
     required DatabaseHelper local,
@@ -38,16 +40,15 @@ class DestinationRepository {
 
   // Gemini batch fetch
 
-  /// Fetches 10 new destinations from Gemini (excluding what we already have)
-  /// and persists them in SQLite.
   Future<void> _fetchGeminiBatch() async {
     final existingNames = await _local.getAllNames();
     final batch = await _gemini.fetchBatch(existingNames);
     if (batch.isEmpty) return;
 
+    final now = DateTime.now().millisecondsSinceEpoch;
     final destinations = batch.map((dto) {
-      // xid = sanitized name slug (stable, reproducible)
-      final xid = 'gem_${dto.name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '_')}';
+      final xid =
+          'gem_${dto.name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '_')}';
       return Destination(
         xid: xid,
         name: dto.name,
@@ -59,6 +60,7 @@ class DestinationRepository {
         address: dto.address.isNotEmpty ? dto.address : null,
         highlight: dto.highlight.isNotEmpty ? dto.highlight : null,
         aiTips: null,
+        createdAt: now,
       );
     }).toList();
 
@@ -67,30 +69,19 @@ class DestinationRepository {
 
   // Pagination
 
-  /// Returns a page of destinations.
+  /// Returns a page of destinations (newest first).
   ///
-  /// If the requested page starts beyond current SQLite count, triggers a
-  /// Gemini batch fetch first so the next page is always available.
+  /// Triggers a Gemini batch fetch if SQLite doesn't have enough for [page].
   Future<List<Destination>> getDestinationsPage(int page) async {
     final offset = page * pageSize;
     final count = await _local.getCount();
 
-    // Need to fetch more: SQLite doesn't have enough yet
     if (offset >= count) {
       if (!await _isOnline()) return [];
       await _fetchGeminiBatch();
     }
 
     return _local.getPage(pageSize, offset);
-  }
-
-  /// Whether more pages may be available (either in SQLite or via Gemini).
-  /// Returns true if the last page was full (could be more) OR there's internet.
-  Future<bool> hasMore(int currentCount) async {
-    // If last batch was full, there might be more
-    if (currentCount % pageSize == 0 && currentCount > 0) return true;
-    // Could still fetch from Gemini if online
-    return _isOnline();
   }
 
   Future<int> getTotalCount() => _local.getCount();
@@ -103,7 +94,11 @@ class DestinationRepository {
 
   // AI Tips
 
-  Future<String?> getAiTips(String xid, String name, String category) async {
+  Future<String?> getAiTips(
+    String xid,
+    String name,
+    String category,
+  ) async {
     final cached = await _local.getById(xid);
     if (cached?.aiTips != null && cached!.aiTips!.isNotEmpty) {
       return cached.aiTips;
@@ -115,17 +110,32 @@ class DestinationRepository {
     return tips;
   }
 
-  // Nearby POIs (OTM)
+  // Nearby POIs — offline-first
 
-  Future<List<NearbyPoi>> getNearbyPois(double lat, double lon) async {
+  /// Returns nearby POIs for [destinationXid].
+  ///
+  /// Reads SQLite cache first. If empty and online, fetches from OTM and
+  /// persists before returning so subsequent calls are offline-capable.
+  Future<List<NearbyPoi>> getNearbyPois(
+    String destinationXid,
+    double lat,
+    double lon,
+  ) async {
+    final cached = await _local.getNearbyPois(destinationXid);
+    if (cached.isNotEmpty) return cached;
+
     if (!await _isOnline()) return [];
-    return _remote.fetchNearbyPois(lat: lat, lon: lon);
+
+    final pois = await _remote.fetchNearbyPois(lat: lat, lon: lon);
+    if (pois.isNotEmpty) {
+      await _local.insertNearbyPois(destinationXid, pois);
+    }
+    return pois;
   }
 
   // Search
 
   Future<List<Destination>> searchDestinations(String query) async {
-    // Local first
     final localResults = await _local.search(query);
     if (localResults.isNotEmpty) return localResults;
 
@@ -134,8 +144,10 @@ class DestinationRepository {
     final batch = await _gemini.searchDestinations(query);
     if (batch.isEmpty) return [];
 
+    final now = DateTime.now().millisecondsSinceEpoch;
     final destinations = batch.map((dto) {
-      final xid = 'search_${dto.name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '_')}';
+      final xid =
+          'search_${dto.name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '_')}';
       return Destination(
         xid: xid,
         name: dto.name,
@@ -147,6 +159,7 @@ class DestinationRepository {
         address: dto.address.isNotEmpty ? dto.address : null,
         highlight: dto.highlight.isNotEmpty ? dto.highlight : null,
         aiTips: null,
+        createdAt: now,
       );
     }).toList();
 

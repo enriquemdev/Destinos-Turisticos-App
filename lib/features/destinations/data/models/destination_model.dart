@@ -18,6 +18,7 @@ abstract class Destination with _$Destination {
     String? address,
     String? highlight,
     String? aiTips,
+    int? createdAt,
   }) = _Destination;
 
   factory Destination.fromJson(Map<String, dynamic> json) =>
@@ -34,6 +35,7 @@ abstract class Destination with _$Destination {
         'address': address,
         'highlight': highlight,
         'aiTips': aiTips,
+        'createdAt': createdAt ?? DateTime.now().millisecondsSinceEpoch,
       };
 
   factory Destination.fromMap(Map<String, dynamic> map) => Destination(
@@ -47,5 +49,6 @@ abstract class Destination with _$Destination {
         address: map['address'] as String?,
         highlight: map['highlight'] as String?,
         aiTips: map['aiTips'] as String?,
+        createdAt: map['createdAt'] as int?,
       );
 }

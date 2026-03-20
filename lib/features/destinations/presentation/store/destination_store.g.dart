@@ -343,9 +343,9 @@ mixin _$DestinationStore on DestinationStoreBase, Store {
   );
 
   @override
-  Future<void> loadNearbyPois(double lat, double lon) {
+  Future<void> loadNearbyPois(String destinationXid, double lat, double lon) {
     return _$loadNearbyPoisAsyncAction.run(
-      () => super.loadNearbyPois(lat, lon),
+      () => super.loadNearbyPois(destinationXid, lat, lon),
     );
   }
 

@@ -57,7 +57,6 @@ Incluye variedad: volcanes, ciudades coloniales, playas, lagos, reservas natural
 Cada objeto DEBE tener EXACTAMENTE estos campos (sin extras):
   "name": string (nombre oficial del lugar en español),
   "description": string (descripción atractiva en español, 2-3 oraciones),
-  "imageUrl": string (URL directa a una imagen real del lugar, preferiblemente de Wikipedia Commons o fuente pública confiable),
   "category": string (uno de: naturaleza, cultura, historia, playa, aventura, gastronomia, ciudad),
   "highlight": string (una oración impactante en español, máximo 15 palabras),
   "latitude": number (coordenadas GPS precisas),

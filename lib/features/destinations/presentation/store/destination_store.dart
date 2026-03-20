@@ -201,14 +201,18 @@ abstract class DestinationStoreBase with Store {
   // Actions: Nearby POIs
 
   @action
-  Future<void> loadNearbyPois(double lat, double lon) async {
+  Future<void> loadNearbyPois(
+    String destinationXid,
+    double lat,
+    double lon,
+  ) async {
     if (isLoadingNearby) return;
     runInAction(() {
       isLoadingNearby = true;
       nearbyPois.clear();
     });
     try {
-      final pois = await _repository.getNearbyPois(lat, lon);
+      final pois = await _repository.getNearbyPois(destinationXid, lat, lon);
       runInAction(() {
         nearbyPois = ObservableList<NearbyPoi>.of(pois);
         isLoadingNearby = false;

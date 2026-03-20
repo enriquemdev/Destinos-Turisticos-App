@@ -99,15 +99,19 @@ class DestinationDetailLoadedView extends StatelessWidget {
           const SizedBox(height: 28),
           _SectionTitle(title: 'Ubicación', scheme: scheme),
           const SizedBox(height: 12),
-          DestinationMap(
-            latitude: destination.latitude,
-            longitude: destination.longitude,
+          Observer(
+            builder: (_) => DestinationMap(
+              latitude: destination.latitude,
+              longitude: destination.longitude,
+              nearbyPois: store.nearbyPois.toList(),
+            ),
           ),
 
           // Nearby POIs (OTM)
           const SizedBox(height: 24),
           NearbyPoisSection(
             store: store,
+            destinationXid: destination.xid,
             latitude: destination.latitude,
             longitude: destination.longitude,
           ),

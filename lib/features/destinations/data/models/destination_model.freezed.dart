@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Destination {
 
- String get xid; String get name; String? get description; String? get imageUrl; String get category; double get latitude; double get longitude; String? get address; String? get highlight; String? get aiTips;
+ String get xid; String get name; String? get description; String? get imageUrl; String get category; double get latitude; double get longitude; String? get address; String? get highlight; String? get aiTips; int? get createdAt;
 /// Create a copy of Destination
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $DestinationCopyWith<Destination> get copyWith => _$DestinationCopyWithImpl<Dest
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Destination&&(identical(other.xid, xid) || other.xid == xid)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.category, category) || other.category == category)&&(identical(other.latitude, latitude) || other.latitude == latitude)&&(identical(other.longitude, longitude) || other.longitude == longitude)&&(identical(other.address, address) || other.address == address)&&(identical(other.highlight, highlight) || other.highlight == highlight)&&(identical(other.aiTips, aiTips) || other.aiTips == aiTips));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Destination&&(identical(other.xid, xid) || other.xid == xid)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.category, category) || other.category == category)&&(identical(other.latitude, latitude) || other.latitude == latitude)&&(identical(other.longitude, longitude) || other.longitude == longitude)&&(identical(other.address, address) || other.address == address)&&(identical(other.highlight, highlight) || other.highlight == highlight)&&(identical(other.aiTips, aiTips) || other.aiTips == aiTips)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,xid,name,description,imageUrl,category,latitude,longitude,address,highlight,aiTips);
+int get hashCode => Object.hash(runtimeType,xid,name,description,imageUrl,category,latitude,longitude,address,highlight,aiTips,createdAt);
 
 @override
 String toString() {
-  return 'Destination(xid: $xid, name: $name, description: $description, imageUrl: $imageUrl, category: $category, latitude: $latitude, longitude: $longitude, address: $address, highlight: $highlight, aiTips: $aiTips)';
+  return 'Destination(xid: $xid, name: $name, description: $description, imageUrl: $imageUrl, category: $category, latitude: $latitude, longitude: $longitude, address: $address, highlight: $highlight, aiTips: $aiTips, createdAt: $createdAt)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $DestinationCopyWith<$Res>  {
   factory $DestinationCopyWith(Destination value, $Res Function(Destination) _then) = _$DestinationCopyWithImpl;
 @useResult
 $Res call({
- String xid, String name, String? description, String? imageUrl, String category, double latitude, double longitude, String? address, String? highlight, String? aiTips
+ String xid, String name, String? description, String? imageUrl, String category, double latitude, double longitude, String? address, String? highlight, String? aiTips, int? createdAt
 });
 
 
@@ -65,7 +65,7 @@ class _$DestinationCopyWithImpl<$Res>
 
 /// Create a copy of Destination
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? xid = null,Object? name = null,Object? description = freezed,Object? imageUrl = freezed,Object? category = null,Object? latitude = null,Object? longitude = null,Object? address = freezed,Object? highlight = freezed,Object? aiTips = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? xid = null,Object? name = null,Object? description = freezed,Object? imageUrl = freezed,Object? category = null,Object? latitude = null,Object? longitude = null,Object? address = freezed,Object? highlight = freezed,Object? aiTips = freezed,Object? createdAt = freezed,}) {
   return _then(_self.copyWith(
 xid: null == xid ? _self.xid : xid // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -77,7 +77,8 @@ as double,longitude: null == longitude ? _self.longitude : longitude // ignore: 
 as double,address: freezed == address ? _self.address : address // ignore: cast_nullable_to_non_nullable
 as String?,highlight: freezed == highlight ? _self.highlight : highlight // ignore: cast_nullable_to_non_nullable
 as String?,aiTips: freezed == aiTips ? _self.aiTips : aiTips // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as int?,
   ));
 }
 
@@ -162,10 +163,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String xid,  String name,  String? description,  String? imageUrl,  String category,  double latitude,  double longitude,  String? address,  String? highlight,  String? aiTips)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String xid,  String name,  String? description,  String? imageUrl,  String category,  double latitude,  double longitude,  String? address,  String? highlight,  String? aiTips,  int? createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Destination() when $default != null:
-return $default(_that.xid,_that.name,_that.description,_that.imageUrl,_that.category,_that.latitude,_that.longitude,_that.address,_that.highlight,_that.aiTips);case _:
+return $default(_that.xid,_that.name,_that.description,_that.imageUrl,_that.category,_that.latitude,_that.longitude,_that.address,_that.highlight,_that.aiTips,_that.createdAt);case _:
   return orElse();
 
 }
@@ -183,10 +184,10 @@ return $default(_that.xid,_that.name,_that.description,_that.imageUrl,_that.cate
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String xid,  String name,  String? description,  String? imageUrl,  String category,  double latitude,  double longitude,  String? address,  String? highlight,  String? aiTips)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String xid,  String name,  String? description,  String? imageUrl,  String category,  double latitude,  double longitude,  String? address,  String? highlight,  String? aiTips,  int? createdAt)  $default,) {final _that = this;
 switch (_that) {
 case _Destination():
-return $default(_that.xid,_that.name,_that.description,_that.imageUrl,_that.category,_that.latitude,_that.longitude,_that.address,_that.highlight,_that.aiTips);case _:
+return $default(_that.xid,_that.name,_that.description,_that.imageUrl,_that.category,_that.latitude,_that.longitude,_that.address,_that.highlight,_that.aiTips,_that.createdAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -203,10 +204,10 @@ return $default(_that.xid,_that.name,_that.description,_that.imageUrl,_that.cate
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String xid,  String name,  String? description,  String? imageUrl,  String category,  double latitude,  double longitude,  String? address,  String? highlight,  String? aiTips)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String xid,  String name,  String? description,  String? imageUrl,  String category,  double latitude,  double longitude,  String? address,  String? highlight,  String? aiTips,  int? createdAt)?  $default,) {final _that = this;
 switch (_that) {
 case _Destination() when $default != null:
-return $default(_that.xid,_that.name,_that.description,_that.imageUrl,_that.category,_that.latitude,_that.longitude,_that.address,_that.highlight,_that.aiTips);case _:
+return $default(_that.xid,_that.name,_that.description,_that.imageUrl,_that.category,_that.latitude,_that.longitude,_that.address,_that.highlight,_that.aiTips,_that.createdAt);case _:
   return null;
 
 }
@@ -218,7 +219,7 @@ return $default(_that.xid,_that.name,_that.description,_that.imageUrl,_that.cate
 @JsonSerializable()
 
 class _Destination extends Destination {
-  const _Destination({required this.xid, required this.name, this.description, this.imageUrl, required this.category, required this.latitude, required this.longitude, this.address, this.highlight, this.aiTips}): super._();
+  const _Destination({required this.xid, required this.name, this.description, this.imageUrl, required this.category, required this.latitude, required this.longitude, this.address, this.highlight, this.aiTips, this.createdAt}): super._();
   factory _Destination.fromJson(Map<String, dynamic> json) => _$DestinationFromJson(json);
 
 @override final  String xid;
@@ -231,6 +232,7 @@ class _Destination extends Destination {
 @override final  String? address;
 @override final  String? highlight;
 @override final  String? aiTips;
+@override final  int? createdAt;
 
 /// Create a copy of Destination
 /// with the given fields replaced by the non-null parameter values.
@@ -245,16 +247,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Destination&&(identical(other.xid, xid) || other.xid == xid)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.category, category) || other.category == category)&&(identical(other.latitude, latitude) || other.latitude == latitude)&&(identical(other.longitude, longitude) || other.longitude == longitude)&&(identical(other.address, address) || other.address == address)&&(identical(other.highlight, highlight) || other.highlight == highlight)&&(identical(other.aiTips, aiTips) || other.aiTips == aiTips));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Destination&&(identical(other.xid, xid) || other.xid == xid)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.category, category) || other.category == category)&&(identical(other.latitude, latitude) || other.latitude == latitude)&&(identical(other.longitude, longitude) || other.longitude == longitude)&&(identical(other.address, address) || other.address == address)&&(identical(other.highlight, highlight) || other.highlight == highlight)&&(identical(other.aiTips, aiTips) || other.aiTips == aiTips)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,xid,name,description,imageUrl,category,latitude,longitude,address,highlight,aiTips);
+int get hashCode => Object.hash(runtimeType,xid,name,description,imageUrl,category,latitude,longitude,address,highlight,aiTips,createdAt);
 
 @override
 String toString() {
-  return 'Destination(xid: $xid, name: $name, description: $description, imageUrl: $imageUrl, category: $category, latitude: $latitude, longitude: $longitude, address: $address, highlight: $highlight, aiTips: $aiTips)';
+  return 'Destination(xid: $xid, name: $name, description: $description, imageUrl: $imageUrl, category: $category, latitude: $latitude, longitude: $longitude, address: $address, highlight: $highlight, aiTips: $aiTips, createdAt: $createdAt)';
 }
 
 
@@ -265,7 +267,7 @@ abstract mixin class _$DestinationCopyWith<$Res> implements $DestinationCopyWith
   factory _$DestinationCopyWith(_Destination value, $Res Function(_Destination) _then) = __$DestinationCopyWithImpl;
 @override @useResult
 $Res call({
- String xid, String name, String? description, String? imageUrl, String category, double latitude, double longitude, String? address, String? highlight, String? aiTips
+ String xid, String name, String? description, String? imageUrl, String category, double latitude, double longitude, String? address, String? highlight, String? aiTips, int? createdAt
 });
 
 
@@ -282,7 +284,7 @@ class __$DestinationCopyWithImpl<$Res>
 
 /// Create a copy of Destination
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? xid = null,Object? name = null,Object? description = freezed,Object? imageUrl = freezed,Object? category = null,Object? latitude = null,Object? longitude = null,Object? address = freezed,Object? highlight = freezed,Object? aiTips = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? xid = null,Object? name = null,Object? description = freezed,Object? imageUrl = freezed,Object? category = null,Object? latitude = null,Object? longitude = null,Object? address = freezed,Object? highlight = freezed,Object? aiTips = freezed,Object? createdAt = freezed,}) {
   return _then(_Destination(
 xid: null == xid ? _self.xid : xid // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -294,7 +296,8 @@ as double,longitude: null == longitude ? _self.longitude : longitude // ignore: 
 as double,address: freezed == address ? _self.address : address // ignore: cast_nullable_to_non_nullable
 as String?,highlight: freezed == highlight ? _self.highlight : highlight // ignore: cast_nullable_to_non_nullable
 as String?,aiTips: freezed == aiTips ? _self.aiTips : aiTips // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as int?,
   ));
 }
 
