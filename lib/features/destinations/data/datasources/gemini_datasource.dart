@@ -38,7 +38,7 @@ class GeminiDataSource {
 
   // Public API
 
-  /// Returns a batch of 10 Nicaragua tourist destinations excluding [excludeNames].
+  /// Returns a batch of 20 Nicaragua tourist destinations excluding [excludeNames].
   Future<List<GeminiDestinationDto>> fetchBatch(
     List<String> excludeNames,
   ) async {
@@ -46,10 +46,11 @@ class GeminiDataSource {
         ? 'Excluye estos destinos que ya tengo: ${excludeNames.join(', ')}.'
         : '';
 
-    final prompt = '''
+    final prompt =
+        '''
 Eres un experto en turismo de Nicaragua. $exclusion
 
-Devuelve un JSON array de exactamente 10 destinos turísticos de Nicaragua que NO estén en la lista de exclusión.
+Devuelve un JSON array de exactamente 20 destinos turísticos de Nicaragua que NO estén en la lista de exclusión.
 Incluye variedad: volcanes, ciudades coloniales, playas, lagos, reservas naturales, sitios culturales.
 
 Cada objeto DEBE tener EXACTAMENTE estos campos (sin extras):
@@ -70,7 +71,8 @@ Responde ÚNICAMENTE con el JSON array. Sin markdown, sin explicación.
 
   /// Searches for up to 5 Nicaragua tourist destinations matching [query].
   Future<List<GeminiDestinationDto>> searchDestinations(String query) async {
-    final prompt = '''
+    final prompt =
+        '''
 Eres un experto en turismo de Nicaragua.
 Busca EXACTAMENTE hasta 5 destinos turísticos de Nicaragua relacionados con: "$query".
 
@@ -108,10 +110,7 @@ Responde ÚNICAMENTE con el JSON array (máximo 5 elementos). Array vacío [] si
                 ],
               },
             ],
-            'generationConfig': {
-              'temperature': 0.5,
-              'maxOutputTokens': 4096,
-            },
+            'generationConfig': {'temperature': 0.5, 'maxOutputTokens': 4096},
           },
         );
 

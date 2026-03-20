@@ -11,7 +11,7 @@ class DestinationStore = DestinationStoreBase with _$DestinationStore;
 
 abstract class DestinationStoreBase with Store {
   DestinationStoreBase({required DestinationRepository repository})
-      : _repository = repository;
+    : _repository = repository;
 
   final DestinationRepository _repository;
 
@@ -174,6 +174,14 @@ abstract class DestinationStoreBase with Store {
       final destination = await _repository.getDestinationById(xid);
       runInAction(() {
         selectedDestination = destination;
+        if (destination != null && destination.imageUrl != null) {
+          final idx = destinations.indexWhere((d) => d.xid == destination.xid);
+          if (idx != -1 && destinations[idx].imageUrl != destination.imageUrl) {
+            destinations[idx] = destinations[idx].copyWith(
+              imageUrl: destination.imageUrl,
+            );
+          }
+        }
         isLoading = false;
       });
     } catch (e) {
@@ -242,7 +250,9 @@ abstract class DestinationStoreBase with Store {
       final results = await _repository.searchDestinations(query);
       runInAction(() {
         for (final result in results) {
-          final existingIdx = destinations.indexWhere((d) => d.xid == result.xid);
+          final existingIdx = destinations.indexWhere(
+            (d) => d.xid == result.xid,
+          );
           if (existingIdx != -1) {
             destinations[existingIdx] = result;
           } else {

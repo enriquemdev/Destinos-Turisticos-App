@@ -63,8 +63,9 @@ class _ListScreenState extends State<ListScreen> {
       builder: (ctx) {
         final scheme = Theme.of(ctx).colorScheme;
         return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           title: Row(
             children: [
               Icon(Icons.refresh_rounded, color: scheme.primary),
@@ -121,117 +122,119 @@ class _ListScreenState extends State<ListScreen> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Header ────────────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '🇳🇮 Nicaragua',
-                    style: GoogleFonts.outfit(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: scheme.primary,
-                      letterSpacing: 1.2,
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      behavior: HitTestBehavior.translucent,
+      child: Scaffold(
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Header ────────────────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '🇳🇮 Nicaragua',
+                      style: GoogleFonts.outfit(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: scheme.primary,
+                        letterSpacing: 1.2,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Destinos\nTurísticos',
-                    style: GoogleFonts.outfit(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w800,
-                      height: 1.1,
-                      color: scheme.onSurface,
+                    const SizedBox(height: 4),
+                    Text(
+                      'Destinos\nTurísticos',
+                      style: GoogleFonts.outfit(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w800,
+                        height: 1.1,
+                        color: scheme.onSurface,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-
-            // ── Search bar ────────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
-              child: Observer(
-                builder: (_) => TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Buscar destinos…',
-                    hintStyle: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: scheme.onSurface.withAlpha(100),
-                    ),
-                    prefixIcon: Icon(
-                      Icons.search_rounded,
-                      color: scheme.onSurface.withAlpha(130),
-                    ),
-                    suffixIcon: _store.isSearchActive
-                        ? IconButton(
-                            icon: const Icon(Icons.close_rounded),
-                            onPressed: _clearSearch,
-                          )
-                        : null,
-                  ),
-                  textInputAction: TextInputAction.search,
+                  ],
                 ),
               ),
-            ),
 
-            // ── AI search button (visible when query is non-empty) ────────────
-            Observer(
-              builder: (_) {
-                if (!_store.isSearchActive) return const SizedBox.shrink();
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed:
-                          _store.isSearchingWithAi ? null : _store.searchWithAi,
-                      icon: _store.isSearchingWithAi
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Icon(Icons.auto_awesome_rounded, size: 18),
-                      label: Text(
-                        _store.isSearchingWithAi
-                            ? 'Buscando con IA…'
-                            : 'Buscar con IA',
-                        style:
-                            GoogleFonts.outfit(fontWeight: FontWeight.w600),
+              // ── Search bar ────────────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+                child: Observer(
+                  builder: (_) => TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Buscar destinos…',
+                      hintStyle: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: scheme.onSurface.withAlpha(100),
                       ),
-                      style: FilledButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                      prefixIcon: Icon(
+                        Icons.search_rounded,
+                        color: scheme.onSurface.withAlpha(130),
+                      ),
+                      suffixIcon: _store.isSearchActive
+                          ? IconButton(
+                              icon: const Icon(Icons.close_rounded),
+                              onPressed: _clearSearch,
+                            )
+                          : null,
+                    ),
+                    textInputAction: TextInputAction.search,
+                  ),
+                ),
+              ),
+
+              // ── AI search button (visible when query is non-empty) ────────────
+              Observer(
+                builder: (_) {
+                  if (!_store.isSearchActive) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: _store.isSearchingWithAi
+                            ? null
+                            : _store.searchWithAi,
+                        icon: _store.isSearchingWithAi
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.auto_awesome_rounded, size: 18),
+                        label: Text(
+                          _store.isSearchingWithAi
+                              ? 'Buscando con IA…'
+                              : 'Buscar con IA',
+                          style: GoogleFonts.outfit(
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        style: FilledButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
                       ),
                     ),
-                  ),
-                );
-              },
-            ),
-
-            const SizedBox(height: 12),
-
-            // ── Body ──────────────────────────────────────────────────────────
-            Expanded(
-              child: Observer(
-                builder: (_) => _buildBody(context),
+                  );
+                },
               ),
-            ),
-          ],
+
+              const SizedBox(height: 12),
+
+              // ── Body ──────────────────────────────────────────────────────────
+              Expanded(child: Observer(builder: (_) => _buildBody(context))),
+            ],
+          ),
         ),
       ),
     );
@@ -274,8 +277,11 @@ class _ListScreenState extends State<ListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.travel_explore_rounded,
-                size: 56, color: scheme.onSurface.withAlpha(60)),
+            Icon(
+              Icons.travel_explore_rounded,
+              size: 56,
+              color: scheme.onSurface.withAlpha(60),
+            ),
             const SizedBox(height: 16),
             Text(
               'No hay resultados locales para\n"${_store.searchQuery}"',
@@ -306,7 +312,8 @@ class _ListScreenState extends State<ListScreen> {
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-          itemCount: items.length +
+          itemCount:
+              items.length +
               (!_store.isSearchActive && _store.hasMorePages ? 1 : 0),
           separatorBuilder: (context, index) => const SizedBox(height: 16),
           itemBuilder: (context, index) {
@@ -351,10 +358,7 @@ class _ListScreenState extends State<ListScreen> {
 }
 
 class _DestinationCardItem extends StatelessWidget {
-  const _DestinationCardItem({
-    required this.destination,
-    required this.onTap,
-  });
+  const _DestinationCardItem({required this.destination, required this.onTap});
 
   final Destination destination;
   final VoidCallback onTap;
@@ -418,13 +422,13 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.travel_explore_rounded,
-              size: 72, color: scheme.onSurface.withAlpha(50)),
-          const SizedBox(height: 20),
-          Text(
-            'Sin destinos guardados',
-            style: theme.textTheme.titleMedium,
+          Icon(
+            Icons.travel_explore_rounded,
+            size: 72,
+            color: scheme.onSurface.withAlpha(50),
           ),
+          const SizedBox(height: 20),
+          Text('Sin destinos guardados', style: theme.textTheme.titleMedium),
           const SizedBox(height: 8),
           Text(
             'Conéctate a internet para cargar\nlos mejores destinos de Nicaragua.',
