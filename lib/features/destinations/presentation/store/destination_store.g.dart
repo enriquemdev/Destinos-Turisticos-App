@@ -240,16 +240,6 @@ mixin _$DestinationStore on DestinationStoreBase, Store {
     return _$loadDestinationsAsyncAction.run(() => super.loadDestinations());
   }
 
-  late final _$fetchMoreItemsAsyncAction = AsyncAction(
-    'DestinationStoreBase.fetchMoreItems',
-    context: context,
-  );
-
-  @override
-  Future<void> fetchMoreItems() {
-    return _$fetchMoreItemsAsyncAction.run(() => super.fetchMoreItems());
-  }
-
   late final _$loadDestinationByIdAsyncAction = AsyncAction(
     'DestinationStoreBase.loadDestinationById',
     context: context,

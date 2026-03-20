@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../../core/api/api_client.dart';
 
@@ -38,7 +39,7 @@ class GeminiDataSource {
 
   // Public API
 
-  /// Returns a batch of 20 Nicaragua tourist destinations excluding [excludeNames].
+  /// Returns a batch of 15 Nicaragua tourist destinations excluding [excludeNames].
   Future<List<GeminiDestinationDto>> fetchBatch(
     List<String> excludeNames,
   ) async {
@@ -50,7 +51,7 @@ class GeminiDataSource {
         '''
 Eres un experto en turismo de Nicaragua. $exclusion
 
-Devuelve un JSON array de exactamente 20 destinos turísticos de Nicaragua que NO estén en la lista de exclusión.
+Devuelve un JSON array de exactamente 15 destinos turísticos de Nicaragua que NO estén en la lista de exclusión.
 Incluye variedad: volcanes, ciudades coloniales, playas, lagos, reservas naturales, sitios culturales.
 
 Cada objeto DEBE tener EXACTAMENTE estos campos (sin extras):
@@ -65,8 +66,12 @@ Cada objeto DEBE tener EXACTAMENTE estos campos (sin extras):
 Responde ÚNICAMENTE con el JSON array. Sin markdown, sin explicación.
 ''';
 
+    debugPrint('[Gemini] fetchBatch: exclusion list has ${excludeNames.length} names');
     final raw = await _callGemini(prompt);
-    return _parseBatch(raw);
+    debugPrint('[Gemini] fetchBatch: raw response length=${raw.length}');
+    final result = _parseBatch(raw);
+    debugPrint('[Gemini] fetchBatch: parsed ${result.length} destinations');
+    return result;
   }
 
   /// Searches for up to 5 Nicaragua tourist destinations matching [query].
@@ -93,67 +98,55 @@ Responde ÚNICAMENTE con el JSON array (máximo 5 elementos). Array vacío [] si
 
   // Private
 
-  static const int _maxRetries = 3;
-  static const Duration _retryBaseDelay = Duration(seconds: 3);
-
   Future<String> _callGemini(String prompt) async {
-    for (var attempt = 0; attempt <= _maxRetries; attempt++) {
-      try {
-        final response = await _dio.post<Map<String, dynamic>>(
-          '$_model:generateContent',
-          queryParameters: {'key': ApiClient.geminiApiKey},
-          data: {
-            'contents': [
-              {
-                'parts': [
-                  {'text': prompt},
-                ],
-              },
-            ],
-            'generationConfig': {'temperature': 0.5, 'maxOutputTokens': 4096},
-          },
-        );
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '$_model:generateContent',
+        queryParameters: {'key': ApiClient.geminiApiKey},
+        data: {
+          'contents': [
+            {
+              'parts': [
+                {'text': prompt},
+              ],
+            },
+          ],
+          'generationConfig': {'temperature': 0.5, 'maxOutputTokens': 4096},
+        },
+      );
 
-        final data = response.data;
-        if (data == null) throw GeminiDataSourceException('Empty response');
+      final data = response.data;
+      if (data == null) throw GeminiDataSourceException('Empty response');
 
-        final candidates = data['candidates'] as List<dynamic>?;
-        if (candidates == null || candidates.isEmpty) {
-          throw GeminiDataSourceException('No candidates');
-        }
-
-        final content = candidates.first['content'] as Map<String, dynamic>?;
-        final parts = content?['parts'] as List<dynamic>?;
-        final text = parts?.first['text'] as String?;
-
-        if (text == null || text.isEmpty) {
-          throw GeminiDataSourceException('Empty text in response');
-        }
-
-        return text.trim();
-      } on DioException catch (e) {
-        final status = e.response?.statusCode;
-        if (status == 429 && attempt < _maxRetries) {
-          await Future<void>.delayed(_retryBaseDelay * (attempt + 1));
-          continue;
-        }
-        if (status == 429) {
-          throw GeminiDataSourceException(
-            'Rate limit exceeded after $_maxRetries retries.',
-          );
-        }
-        if (status == 401 || status == 403) {
-          throw GeminiDataSourceException('Invalid Gemini API key.');
-        }
-        throw GeminiDataSourceException(e.message ?? 'Network error.');
+      final candidates = data['candidates'] as List<dynamic>?;
+      if (candidates == null || candidates.isEmpty) {
+        throw GeminiDataSourceException('No candidates');
       }
+
+      final content = candidates.first['content'] as Map<String, dynamic>?;
+      final parts = content?['parts'] as List<dynamic>?;
+      final text = parts?.first['text'] as String?;
+
+      if (text == null || text.isEmpty) {
+        throw GeminiDataSourceException('Empty text in response');
+      }
+
+      return text.trim();
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      if (status == 429) {
+        throw GeminiDataSourceException('Límite de solicitudes alcanzado (429). Intenta más tarde.');
+      }
+      if (status == 401 || status == 403) {
+        throw GeminiDataSourceException('API key de Gemini inválida.');
+      }
+      throw GeminiDataSourceException(e.message ?? 'Error de red.');
     }
-    throw GeminiDataSourceException('Request failed after retries.');
   }
 
   List<GeminiDestinationDto> _parseBatch(String raw) {
+    var cleaned = raw.trim();
     try {
-      var cleaned = raw.trim();
       // Strip markdown code fences if present
       if (cleaned.startsWith('```')) {
         cleaned = cleaned.replaceAll(RegExp(r'```[a-z]*\n?'), '').trim();
@@ -168,7 +161,8 @@ Responde ÚNICAMENTE con el JSON array (máximo 5 elementos). Array vacío [] si
         if (dto != null) result.add(dto);
       }
       return result;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[Gemini] _parseBatch: PARSE ERROR: $e\nraw=$cleaned');
       return [];
     }
   }

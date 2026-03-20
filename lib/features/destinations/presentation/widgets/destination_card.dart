@@ -139,7 +139,7 @@ class _CardImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final url = imageUrl?.trim();
-    if (url == null || url.isEmpty) {
+    if (url == null || url.isEmpty || url == '__no_image__') {
       return _PlaceholderImage(scheme: scheme);
     }
     return CachedNetworkImage(

@@ -1,6 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:mobx/mobx.dart';
 
-import '../../../../core/constants/app_constants.dart';
 import '../../data/models/destination_model.dart';
 import '../../data/models/nearby_poi.dart';
 import '../../data/repository/destination_repository.dart';
@@ -91,11 +91,11 @@ abstract class DestinationStoreBase with Store {
       destinations.clear();
     });
     try {
-      final list = await _repository.getDestinationsPage(0);
+      final result = await _repository.getDestinationsPage(0);
       runInAction(() {
-        destinations = ObservableList<Destination>.of(list);
+        destinations = ObservableList<Destination>.of(result.items);
         currentPage = 0;
-        hasMorePages = list.length >= pageSize;
+        hasMorePages = result.hasMore;
         isLoading = false;
       });
     } catch (e) {
@@ -106,26 +106,38 @@ abstract class DestinationStoreBase with Store {
     }
   }
 
-  @action
+  /// Not an `@action`: async [AsyncAction] batches notifications until the
+  /// [Future] completes, so `isLoadingMore` never paints between true/false.
   Future<void> fetchMoreItems() async {
     // Disable pagination while searching
-    if (isLoadingMore || !hasMorePages || isSearchActive) return;
+    if (isLoadingMore || !hasMorePages || isSearchActive) {
+      debugPrint(
+        '[Store] fetchMoreItems: skipped (isLoadingMore=$isLoadingMore '
+        'hasMorePages=$hasMorePages isSearchActive=$isSearchActive)',
+      );
+      return;
+    }
 
+    debugPrint('[Store] fetchMoreItems: requesting page=${currentPage + 1}');
     runInAction(() => isLoadingMore = true);
+    // Let the next frame paint the footer loader before awaiting network/DB.
+    await Future<void>.delayed(Duration.zero);
 
     try {
       final nextPage = currentPage + 1;
-      final list = await _repository.getDestinationsPage(nextPage);
+      final result = await _repository.getDestinationsPage(nextPage);
 
       runInAction(() {
-        if (list.isEmpty) {
-          hasMorePages = false;
-        } else {
-          destinations.addAll(list);
+        if (result.items.isNotEmpty) {
+          destinations.addAll(result.items);
           currentPage = nextPage;
-          hasMorePages = list.length >= pageSize;
         }
+        hasMorePages = result.hasMore;
         isLoadingMore = false;
+        debugPrint(
+          '[Store] fetchMoreItems: got ${result.items.length} items '
+          'hasMore=${result.hasMore} → totalDestinations=${destinations.length}',
+        );
       });
     } catch (e) {
       runInAction(() {

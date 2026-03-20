@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../../core/api/api_client.dart';
 
@@ -17,7 +18,8 @@ class WikimediaDataSource {
   final Dio _wikidata;
 
   // Nominatim requires at least 1 second between requests (usage policy).
-  static const Duration _nominatimDelay = Duration(seconds: 1);
+  // Using 1.5s to be gentler with the API and avoid rate limiting.
+  static const Duration _nominatimDelay = Duration(milliseconds: 1500);
 
   /// Fetches a real image URL for [name] near [lat],[lon].
   ///
@@ -27,14 +29,19 @@ class WikimediaDataSource {
     double lat,
     double lon,
   ) async {
+    debugPrint('[Wikimedia] fetchImageUrl: "$name"');
     await Future<void>.delayed(_nominatimDelay);
     final qid = await _fetchWikidataQid(name, lat, lon);
+    debugPrint('[Wikimedia] "$name" → qid=$qid');
     if (qid == null) return null;
 
     final fileName = await _fetchWikidataImageName(qid);
+    debugPrint('[Wikimedia] "$name" qid=$qid → fileName=$fileName');
     if (fileName == null || fileName.isEmpty) return null;
 
-    return _buildCommonsUrl(fileName);
+    final url = _buildCommonsUrl(fileName);
+    debugPrint('[Wikimedia] "$name" → final url=$url');
+    return url;
   }
 
   // Step 1: Nominatim search → Wikidata QID
@@ -66,34 +73,49 @@ class WikimediaDataSource {
         if (qid != null && qid.startsWith('Q')) return qid;
       }
       return null;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[Wikimedia] Nominatim FAILED for "$name": $e');
       return null;
     }
   }
 
-  // Step 2: Wikidata API → image file name from P18 property
+  // Step 2: Wikidata API → image file name from P18 (via wbgetentities)
+
+  String? _p18FilenameFromClaims(Map<String, dynamic>? claims) {
+    final p18 = claims?['P18'] as List<dynamic>?;
+    if (p18 == null || p18.isEmpty) return null;
+    for (final claim in p18) {
+      if (claim is! Map<String, dynamic>) continue;
+      final mainsnak = claim['mainsnak'] as Map<String, dynamic>?;
+      if (mainsnak == null) continue;
+      final datavalue = mainsnak['datavalue'] as Map<String, dynamic>?;
+      final value = datavalue?['value'];
+      if (value is String && value.isNotEmpty) return value;
+    }
+    return null;
+  }
 
   Future<String?> _fetchWikidataImageName(String qid) async {
     try {
       final response = await _wikidata.get<dynamic>(
         'api.php',
         queryParameters: {
-          'action': 'wbgetclaims',
-          'property': 'P18',
-          'entity': qid,
+          'action': 'wbgetentities',
+          'ids': qid,
+          'props': 'claims',
           'format': 'json',
         },
       );
 
       final data = response.data as Map<String, dynamic>?;
-      final claims = data?['claims'] as Map<String, dynamic>?;
-      final p18 = claims?['P18'] as List<dynamic>?;
-      if (p18 == null || p18.isEmpty) return null;
+      final entities = data?['entities'] as Map<String, dynamic>?;
+      final entity = entities?[qid] as Map<String, dynamic>?;
+      if (entity == null || entity.containsKey('missing')) return null;
 
-      final mainsnak = p18.first['mainsnak'] as Map<String, dynamic>?;
-      final datavalue = mainsnak?['datavalue'] as Map<String, dynamic>?;
-      return datavalue?['value'] as String?;
-    } catch (_) {
+      final claims = entity['claims'] as Map<String, dynamic>?;
+      return _p18FilenameFromClaims(claims);
+    } catch (e) {
+      debugPrint('[Wikimedia] Wikidata P18 FAILED for qid=$qid: $e');
       return null;
     }
   }

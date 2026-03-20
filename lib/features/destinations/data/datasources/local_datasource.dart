@@ -127,7 +127,7 @@ class DatabaseHelper {
     final database = await db;
     final rows = await database.query(
       tableDestinations,
-      orderBy: 'createdAt DESC',   // newest batch first
+      orderBy: 'createdAt ASC, xid ASC', // stable order when createdAt ties
       limit: limit,
       offset: offset,
     );

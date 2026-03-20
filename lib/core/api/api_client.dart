@@ -85,6 +85,9 @@ class ApiClient {
         baseUrl: _wikidataBaseUrl,
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 15),
+        headers: {
+          'User-Agent': 'DestinosTuristicosApp/1.0 (enriquemdev@gmail.com)',
+        },
       ),
     );
     return _wikidataInstance!;

@@ -10,6 +10,7 @@ import '../../data/models/destination_model.dart';
 import '../store/destination_store.dart';
 import '../widgets/destination_card.dart';
 import '../widgets/destination_skeleton.dart';
+import '../widgets/list_footer.dart';
 
 class ListScreen extends StatefulWidget {
   const ListScreen({super.key});
@@ -34,20 +35,11 @@ class _ListScreenState extends State<ListScreen> {
       _store.setSearchQuery(_searchController.text);
     });
 
-    _scrollController.addListener(_onScroll);
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_store.destinations.isEmpty) {
         _store.loadDestinations();
       }
     });
-  }
-
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
-      _store.fetchMoreItems();
-    }
   }
 
   @override
@@ -253,19 +245,16 @@ class _ListScreenState extends State<ListScreen> {
       child: ListView.separated(
         controller: _scrollController,
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-        itemCount:
-            items.length +
-            (!_store.isSearchActive && _store.hasMorePages ? 1 : 0),
+        itemCount: items.length + (_store.isSearchActive ? 0 : 1),
         separatorBuilder: (context, index) => const SizedBox(height: 16),
         itemBuilder: (context, index) {
-          // Loading more indicator at the end (only in non-search mode)
+          // Footer: loading more or end-of-list (only in non-search mode)
           if (index == items.length) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              child: Center(
-                child: _store.isLoadingMore
-                    ? CircularProgressIndicator(color: scheme.primary)
-                    : const SizedBox.shrink(),
+            return Observer(
+              builder: (_) => DestinationListFooter(
+                isLoadingMore: _store.isLoadingMore,
+                hasMorePages: _store.hasMorePages,
+                onLoadMore: _store.fetchMoreItems,
               ),
             );
           }
