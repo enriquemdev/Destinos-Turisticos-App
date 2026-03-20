@@ -20,6 +20,10 @@ abstract class DestinationListStoreBase with Store {
   final GetDestinationsPageUseCase _getDestinationsPage;
   final SearchDestinationsUseCase _searchDestinations;
 
+  /// Buffer for image updates that arrive before the list is populated.
+  /// Keyed by xid, value is the imageUrl.
+  final Map<String, String> _pendingImageUpdates = {};
+
   // List & Pagination
 
   @observable
@@ -88,6 +92,7 @@ abstract class DestinationListStoreBase with Store {
         currentPage = 0;
         hasMorePages = result.hasMore;
         isLoading = false;
+        _applyPendingImageUpdates();
       });
     } catch (e) {
       runInAction(() {
@@ -121,6 +126,7 @@ abstract class DestinationListStoreBase with Store {
         }
         hasMorePages = result.hasMore;
         isLoadingMore = false;
+        _applyPendingImageUpdates();
         debugPrint(
           '[ListStore] fetchMoreItems: got ${result.items.length} items '
           'hasMore=${result.hasMore} → totalDestinations=${destinations.length}',
@@ -181,6 +187,33 @@ abstract class DestinationListStoreBase with Store {
     final idx = destinations.indexWhere((d) => d.xid == xid);
     if (idx != -1) {
       destinations[idx] = destinations[idx].copyWith(imageUrl: imageUrl);
+    } else {
+      // List is not yet populated (or this xid is on a future page); buffer
+      // the update so it is applied once the list has the destination.
+      _pendingImageUpdates[xid] = imageUrl;
+    }
+  }
+
+  /// Applies any buffered image updates to the current destinations list.
+  /// Must be called inside a MobX action (already guaranteed at call sites).
+  void _applyPendingImageUpdates() {
+    if (_pendingImageUpdates.isEmpty) return;
+    for (var i = 0; i < destinations.length; i++) {
+      final pending = _pendingImageUpdates[destinations[i].xid];
+      if (pending != null) {
+        destinations[i] = destinations[i].copyWith(imageUrl: pending);
+        _pendingImageUpdates.remove(destinations[i].xid);
+      }
+    }
+  }
+
+  // Actions: Detail sync
+
+  @action
+  void syncDestinationFromDetail(DestinationDto updated) {
+    final idx = destinations.indexWhere((d) => d.xid == updated.xid);
+    if (idx != -1 && destinations[idx].imageUrl != updated.imageUrl) {
+      destinations[idx] = destinations[idx].copyWith(imageUrl: updated.imageUrl);
     }
   }
 }

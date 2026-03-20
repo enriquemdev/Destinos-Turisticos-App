@@ -120,6 +120,11 @@ class DestinationsRepositoryImpl implements DestinationsRepository {
       if (currentUrl != null && currentUrl.isNotEmpty) {
         debugPrint(
             '[Repo] enrichImages: ${dest.name} → already has image, skipping');
+        // Notify the list store in case it loaded this destination before the
+        // image was available in its in-memory snapshot.
+        if (currentUrl != _noImageSentinel) {
+          _onImageEnriched?.call(dest.xid, currentUrl);
+        }
         continue;
       }
 

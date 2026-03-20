@@ -73,6 +73,149 @@ void main() {
       },
     );
 
+    // Image sync tests
+
+    test(
+      'Test: updateDestinationImage buffers update when list is empty',
+      () {
+        store.updateDestinationImage('gem_leon', 'https://example.com/leon.jpg');
+
+        // List is empty, so the update should be buffered (not thrown away).
+        // Once the list is populated the image should appear.
+        final fakeItem = const DestinationDto(
+          xid: 'gem_leon',
+          name: 'León',
+          category: 'ciudad',
+          latitude: 12,
+          longitude: -86,
+          createdAt: 1,
+        );
+        when(() => mockGetPage(0)).thenAnswer(
+          (_) async => DestinationPageResultDto(
+            items: [fakeItem],
+            hasMore: false,
+          ),
+        );
+
+        // loadDestinations should apply the buffered update.
+        return store.loadDestinations().then((_) {
+          expect(
+            store.destinations.first.imageUrl,
+            'https://example.com/leon.jpg',
+          );
+        });
+      },
+    );
+
+    test(
+      'Test: updateDestinationImage with existing item updates imageUrl immediately',
+      () {
+        store.destinations.add(
+          const DestinationDto(
+            xid: 'gem_granada',
+            name: 'Granada',
+            category: 'ciudad',
+            latitude: 11.9,
+            longitude: -85.9,
+            createdAt: 1,
+          ),
+        );
+
+        store.updateDestinationImage(
+            'gem_granada', 'https://example.com/granada.jpg');
+
+        expect(
+          store.destinations.first.imageUrl,
+          'https://example.com/granada.jpg',
+        );
+      },
+    );
+
+    test(
+      'Test: updateDestinationImage with unknown xid buffers and is applied on next load',
+      () async {
+        // Buffer for an xid not in the list yet.
+        store.updateDestinationImage('gem_unknown', 'https://example.com/x.jpg');
+
+        final fakeItem = const DestinationDto(
+          xid: 'gem_unknown',
+          name: 'Unknown',
+          category: 'naturaleza',
+          latitude: 13.0,
+          longitude: -86.0,
+          createdAt: 2,
+        );
+        when(() => mockGetPage(0)).thenAnswer(
+          (_) async => DestinationPageResultDto(
+            items: [fakeItem],
+            hasMore: false,
+          ),
+        );
+
+        await store.loadDestinations();
+
+        expect(
+          store.destinations.first.imageUrl,
+          'https://example.com/x.jpg',
+        );
+      },
+    );
+
+    test(
+      'Test: syncDestinationFromDetail updates imageUrl in list when it differs',
+      () {
+        store.destinations.add(
+          const DestinationDto(
+            xid: 'gem_masaya',
+            name: 'Masaya',
+            category: 'ciudad',
+            latitude: 11.97,
+            longitude: -86.09,
+            createdAt: 3,
+          ),
+        );
+
+        final detailVersion = const DestinationDto(
+          xid: 'gem_masaya',
+          name: 'Masaya',
+          category: 'ciudad',
+          latitude: 11.97,
+          longitude: -86.09,
+          imageUrl: 'https://example.com/masaya.jpg',
+          createdAt: 3,
+        );
+
+        store.syncDestinationFromDetail(detailVersion);
+
+        expect(
+          store.destinations.first.imageUrl,
+          'https://example.com/masaya.jpg',
+        );
+      },
+    );
+
+    test(
+      'Test: syncDestinationFromDetail does not mutate list when imageUrl is unchanged',
+      () {
+        const original = DestinationDto(
+          xid: 'gem_ometepe',
+          name: 'Ometepe',
+          category: 'naturaleza',
+          latitude: 11.5,
+          longitude: -85.6,
+          imageUrl: 'https://example.com/ometepe.jpg',
+          createdAt: 4,
+        );
+        store.destinations.add(original);
+
+        store.syncDestinationFromDetail(original);
+
+        expect(store.destinations.first, same(original));
+      },
+    );
+
+    // ── End image sync tests ──────────────────────────────────────────────────
+
     test(
       'Test 8: Verify searchWithAi action sets isSearchingWithAi, calls use case, and appends results properly',
       () async {

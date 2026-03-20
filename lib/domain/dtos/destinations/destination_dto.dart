@@ -54,10 +54,11 @@ class DestinationDto {
       identical(this, other) ||
       other is DestinationDto &&
           runtimeType == other.runtimeType &&
-          xid == other.xid;
+          xid == other.xid &&
+          imageUrl == other.imageUrl;
 
   @override
-  int get hashCode => xid.hashCode;
+  int get hashCode => Object.hash(xid, imageUrl);
 
   @override
   String toString() => 'DestinationDto($xid, $name)';

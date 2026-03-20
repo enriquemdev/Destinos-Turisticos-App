@@ -238,6 +238,18 @@ mixin _$DestinationListStore on DestinationListStoreBase, Store {
   }
 
   @override
+  void syncDestinationFromDetail(DestinationDto updated) {
+    final _$actionInfo = _$DestinationListStoreBaseActionController.startAction(
+      name: 'DestinationListStoreBase.syncDestinationFromDetail',
+    );
+    try {
+      return super.syncDestinationFromDetail(updated);
+    } finally {
+      _$DestinationListStoreBaseActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
   String toString() {
     return '''
 destinations: ${destinations},

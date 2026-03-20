@@ -6,10 +6,13 @@ import 'package:mocktail/mocktail.dart';
 import 'package:get_it/get_it.dart';
 
 import 'package:destinos_turisticos_app/presentation/features/destinations/pages/list_page.dart';
+import 'package:destinos_turisticos_app/presentation/features/destinations/stores/destination_detail_store.dart';
 import 'package:destinos_turisticos_app/presentation/features/destinations/stores/destination_list_store.dart';
 import 'package:destinos_turisticos_app/presentation/features/destinations/widgets/destination_card.dart';
 import 'package:destinos_turisticos_app/presentation/features/destinations/widgets/destination_skeleton.dart';
+import 'package:destinos_turisticos_app/domain/use_cases/destinations/get_destination_by_id_use_case.dart';
 import 'package:destinos_turisticos_app/domain/use_cases/destinations/get_destinations_page_use_case.dart';
+import 'package:destinos_turisticos_app/domain/use_cases/destinations/get_nearby_pois_use_case.dart';
 import 'package:destinos_turisticos_app/domain/use_cases/destinations/search_destinations_use_case.dart';
 import 'package:destinos_turisticos_app/domain/dtos/destinations/destination_dto.dart';
 import 'package:destinos_turisticos_app/domain/dtos/destinations/destination_page_result_dto.dart';
@@ -19,6 +22,11 @@ class MockGetDestinationsPageUseCase extends Mock
 
 class MockSearchDestinationsUseCase extends Mock
     implements SearchDestinationsUseCase {}
+
+class MockGetDestinationByIdUseCase extends Mock
+    implements GetDestinationByIdUseCase {}
+
+class MockGetNearbyPoisUseCase extends Mock implements GetNearbyPoisUseCase {}
 
 void main() {
   late MockGetDestinationsPageUseCase mockGetPage;
@@ -37,8 +45,14 @@ void main() {
       searchDestinations: mockSearch,
     );
 
+    final detailStore = DestinationDetailStore(
+      getDestinationById: MockGetDestinationByIdUseCase(),
+      getNearbyPois: MockGetNearbyPoisUseCase(),
+    );
+
     await GetIt.instance.reset();
     GetIt.instance.registerSingleton<DestinationListStore>(store);
+    GetIt.instance.registerSingleton<DestinationDetailStore>(detailStore);
   });
 
   Widget buildTestWidget() {

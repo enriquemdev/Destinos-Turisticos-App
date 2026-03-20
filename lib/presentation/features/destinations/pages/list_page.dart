@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../app/di.dart';
 import '../../../../app/navigation/router.dart';
 import '../../../../domain/dtos/destinations/destination_dto.dart';
+import '../stores/destination_detail_store.dart';
 import '../stores/destination_list_store.dart';
 import '../widgets/destination_card.dart';
 import '../widgets/destination_skeleton.dart';
@@ -21,6 +22,7 @@ class ListPage extends StatefulWidget {
 
 class _ListPageState extends State<ListPage> {
   late final DestinationListStore _store;
+  late final DestinationDetailStore _detailStore;
   late final TextEditingController _searchController;
   late final ScrollController _scrollController;
 
@@ -28,6 +30,7 @@ class _ListPageState extends State<ListPage> {
   void initState() {
     super.initState();
     _store = sl<DestinationListStore>();
+    _detailStore = sl<DestinationDetailStore>();
     _searchController = TextEditingController();
     _scrollController = ScrollController();
 
@@ -271,11 +274,20 @@ class _ListPageState extends State<ListPage> {
     );
   }
 
-  void _navigateToDetail(BuildContext context, DestinationDto destination) {
-    context.pushNamed(
+  Future<void> _navigateToDetail(
+    BuildContext context,
+    DestinationDto destination,
+  ) async {
+    await context.pushNamed(
       RouteNames.detail,
       pathParameters: {'xid': destination.xid},
     );
+    // When returning from detail, sync any image that was loaded there but
+    // is still stale in the list store's in-memory data.
+    final updated = _detailStore.selectedDestination;
+    if (updated != null && updated.xid == destination.xid) {
+      _store.syncDestinationFromDetail(updated);
+    }
   }
 }
 
