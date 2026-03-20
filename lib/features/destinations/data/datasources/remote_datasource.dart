@@ -53,23 +53,34 @@ class DestinationsRemoteDataSource {
     }
   }
 
+  static const int _maxRetries = 3;
+  static const Duration _retryBaseDelay = Duration(seconds: 2);
+
   /// Fetches full details for a place by xid.
+  /// Retries with exponential backoff on 429 (rate limit) responses.
   Future<Destination> fetchPlaceDetails(String xid) async {
-    try {
-      final response = await _dio.get<Map<String, dynamic>>(
-        'places/xid/$xid',
-        queryParameters: {'apikey': ApiClient.apiKey},
-      );
+    for (var attempt = 0; attempt <= _maxRetries; attempt++) {
+      try {
+        final response = await _dio.get<Map<String, dynamic>>(
+          'places/xid/$xid',
+          queryParameters: {'apikey': ApiClient.apiKey},
+        );
 
-      final data = response.data;
-      if (data == null) {
-        throw RemoteDataSourceException('Empty response for xid: $xid');
+        final data = response.data;
+        if (data == null) {
+          throw RemoteDataSourceException('Empty response for xid: $xid');
+        }
+
+        return _parsePlaceDetails(data, xid);
+      } on DioException catch (e) {
+        if (e.response?.statusCode == 429 && attempt < _maxRetries) {
+          await Future<void>.delayed(_retryBaseDelay * (attempt + 1));
+          continue;
+        }
+        throw _translateDioException(e);
       }
-
-      return _parsePlaceDetails(data, xid);
-    } on DioException catch (e) {
-      throw _translateDioException(e);
     }
+    throw RemoteDataSourceException('Max retries exceeded for xid: $xid');
   }
 
   List<Destination> _parsePlaceList(List<dynamic> items) {
@@ -193,6 +204,9 @@ class DestinationsRemoteDataSource {
     if (statusCode != null) {
       if (statusCode == 401) {
         return RemoteDataSourceException('Invalid or missing API key');
+      }
+      if (statusCode == 429) {
+        return RemoteDataSourceException('Rate limit exceeded. Try again later.');
       }
       if (statusCode >= 500) {
         return RemoteDataSourceException('Server error. Try again later.');

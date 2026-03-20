@@ -21,11 +21,23 @@ class DestinationRepository {
     return results.any((r) => r != ConnectivityResult.none);
   }
 
+  static const int _batchSize = 5;
+  static const Duration _batchDelay = Duration(milliseconds: 1200);
+
   Future<void> _fetchAndStore() async {
     final list = await _remote.fetchDestinationsList();
-    final details = await Future.wait(
-      list.map((d) => _remote.fetchPlaceDetails(d.xid)),
-    );
+    final details = <Destination>[];
+
+    for (var i = 0; i < list.length; i += _batchSize) {
+      if (i > 0) await Future<void>.delayed(_batchDelay);
+
+      final batch = list.skip(i).take(_batchSize);
+      final results = await Future.wait(
+        batch.map((d) => _remote.fetchPlaceDetails(d.xid)),
+      );
+      details.addAll(results);
+    }
+
     await _local.insertAll(details);
   }
 
