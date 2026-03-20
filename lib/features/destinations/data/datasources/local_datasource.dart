@@ -123,12 +123,6 @@ class DatabaseHelper {
     );
   }
 
-  Future<void> deleteAll() async {
-    final database = await db;
-    await database.delete(tableDestinations);
-    await database.delete(tableNearbyPois);
-  }
-
   Future<List<Destination>> getPage(int limit, int offset) async {
     final database = await db;
     final rows = await database.query(

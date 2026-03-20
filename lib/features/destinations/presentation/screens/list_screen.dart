@@ -57,61 +57,6 @@ class _ListScreenState extends State<ListScreen> {
     super.dispose();
   }
 
-  Future<void> _onRefresh() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) {
-        final scheme = Theme.of(ctx).colorScheme;
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Row(
-            children: [
-              Icon(Icons.refresh_rounded, color: scheme.primary),
-              const SizedBox(width: 10),
-              Text(
-                'Recargar datos',
-                style: GoogleFonts.outfit(fontWeight: FontWeight.w700),
-              ),
-            ],
-          ),
-          content: Text(
-            '¿Deseas borrar los destinos guardados y comenzar desde cero? '
-            'Se descargarán destinos nuevos si hay conexión.',
-            style: GoogleFonts.inter(fontSize: 14, height: 1.5),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: Text(
-                'Cancelar',
-                style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
-              ),
-            ),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: scheme.error,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: Text(
-                'Borrar y recargar',
-                style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirmed == true) {
-      await _store.refresh();
-    }
-  }
-
   void _clearSearch() {
     _searchController.clear();
     _store.clearSearch();
@@ -304,47 +249,42 @@ class _ListScreenState extends State<ListScreen> {
     }
 
     // Show total count hint when filtering
-    return RefreshIndicator(
-      onRefresh: _onRefresh,
-      color: scheme.primary,
-      child: AnimationLimiter(
-        child: ListView.separated(
-          controller: _scrollController,
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-          itemCount:
-              items.length +
-              (!_store.isSearchActive && _store.hasMorePages ? 1 : 0),
-          separatorBuilder: (context, index) => const SizedBox(height: 16),
-          itemBuilder: (context, index) {
-            // Loading more indicator at the end (only in non-search mode)
-            if (index == items.length) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Center(
-                  child: _store.isLoadingMore
-                      ? CircularProgressIndicator(color: scheme.primary)
-                      : const SizedBox.shrink(),
-                ),
-              );
-            }
-
-            final destination = items[index];
-            return AnimationConfiguration.staggeredList(
-              position: index,
-              duration: const Duration(milliseconds: 400),
-              child: SlideAnimation(
-                verticalOffset: 40,
-                child: FadeInAnimation(
-                  child: _DestinationCardItem(
-                    destination: destination,
-                    onTap: () => _navigateToDetail(context, destination),
-                  ),
-                ),
+    return AnimationLimiter(
+      child: ListView.separated(
+        controller: _scrollController,
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+        itemCount:
+            items.length +
+            (!_store.isSearchActive && _store.hasMorePages ? 1 : 0),
+        separatorBuilder: (context, index) => const SizedBox(height: 16),
+        itemBuilder: (context, index) {
+          // Loading more indicator at the end (only in non-search mode)
+          if (index == items.length) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Center(
+                child: _store.isLoadingMore
+                    ? CircularProgressIndicator(color: scheme.primary)
+                    : const SizedBox.shrink(),
               ),
             );
-          },
-        ),
+          }
+
+          final destination = items[index];
+          return AnimationConfiguration.staggeredList(
+            position: index,
+            duration: const Duration(milliseconds: 400),
+            child: SlideAnimation(
+              verticalOffset: 40,
+              child: FadeInAnimation(
+                child: _DestinationCardItem(
+                  destination: destination,
+                  onTap: () => _navigateToDetail(context, destination),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

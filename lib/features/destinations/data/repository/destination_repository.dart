@@ -181,12 +181,4 @@ class DestinationRepository {
     _enrichImagesSequentially(destinations);
     return destinations;
   }
-
-  // Refresh
-
-  Future<void> refresh() async {
-    if (!await _isOnline()) return;
-    await _local.deleteAll();
-    await _fetchGeminiBatch();
-  }
 }

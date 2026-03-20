@@ -136,30 +136,6 @@ abstract class DestinationStoreBase with Store {
     }
   }
 
-  @action
-  Future<void> refresh() async {
-    runInAction(() {
-      isLoading = true;
-      errorMessage = null;
-      searchQuery = '';
-    });
-    try {
-      await _repository.refresh();
-      final list = await _repository.getDestinationsPage(0);
-      runInAction(() {
-        destinations = ObservableList<Destination>.of(list);
-        currentPage = 0;
-        hasMorePages = list.length >= pageSize;
-        isLoading = false;
-      });
-    } catch (e) {
-      runInAction(() {
-        errorMessage = e.toString();
-        isLoading = false;
-      });
-    }
-  }
-
   // Actions: Detail
 
   @action
