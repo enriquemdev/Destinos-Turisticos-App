@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../features/destinations/presentation/screens/detail_screen.dart';
-import '../features/destinations/presentation/screens/list_screen.dart';
+import '../../features/destinations/presentation/pages/detail_page.dart';
+import '../../features/destinations/presentation/pages/list_page.dart';
 
 // Route names for navigation.
 abstract final class RouteNames {
@@ -17,14 +17,14 @@ final GoRouter appRouter = GoRouter(
       path: '/',
       name: RouteNames.list,
       builder: (BuildContext context, GoRouterState state) =>
-          const ListScreen(),
+          const ListPage(),
       routes: <RouteBase>[
         GoRoute(
           path: 'detail/:xid',
           name: RouteNames.detail,
           builder: (BuildContext context, GoRouterState state) {
             final xid = state.pathParameters['xid'] ?? '';
-            return DetailScreen(xid: xid);
+            return DetailPage(xid: xid);
           },
         ),
       ],

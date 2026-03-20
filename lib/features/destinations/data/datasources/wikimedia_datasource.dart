@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
-import '../../../../core/api/api_client.dart';
+import '../../../../app/config/api_client.dart';
 
 /// Resolves a real image URL for a tourist destination using:
 ///   1. Nominatim (OSM) → extracts Wikidata QID from extratags

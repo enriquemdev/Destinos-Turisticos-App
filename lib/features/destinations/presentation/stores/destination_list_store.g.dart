@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'destination_store.dart';
+part of 'destination_list_store.dart';
 
 // **************************************************************************
 // StoreGenerator
@@ -8,13 +8,13 @@ part of 'destination_store.dart';
 
 // ignore_for_file: non_constant_identifier_names, unnecessary_brace_in_string_interps, unnecessary_lambdas, prefer_expression_function_bodies, lines_longer_than_80_chars, avoid_as, avoid_annotating_with_dynamic, no_leading_underscores_for_local_identifiers
 
-mixin _$DestinationStore on DestinationStoreBase, Store {
+mixin _$DestinationListStore on DestinationListStoreBase, Store {
   Computed<bool>? _$isSearchActiveComputed;
 
   @override
   bool get isSearchActive => (_$isSearchActiveComputed ??= Computed<bool>(
     () => super.isSearchActive,
-    name: 'DestinationStoreBase.isSearchActive',
+    name: 'DestinationListStoreBase.isSearchActive',
   )).value;
   Computed<List<Destination>>? _$displayedDestinationsComputed;
 
@@ -22,18 +22,18 @@ mixin _$DestinationStore on DestinationStoreBase, Store {
   List<Destination> get displayedDestinations =>
       (_$displayedDestinationsComputed ??= Computed<List<Destination>>(
         () => super.displayedDestinations,
-        name: 'DestinationStoreBase.displayedDestinations',
+        name: 'DestinationListStoreBase.displayedDestinations',
       )).value;
   Computed<bool>? _$hasErrorComputed;
 
   @override
   bool get hasError => (_$hasErrorComputed ??= Computed<bool>(
     () => super.hasError,
-    name: 'DestinationStoreBase.hasError',
+    name: 'DestinationListStoreBase.hasError',
   )).value;
 
   late final _$destinationsAtom = Atom(
-    name: 'DestinationStoreBase.destinations',
+    name: 'DestinationListStoreBase.destinations',
     context: context,
   );
 
@@ -51,7 +51,7 @@ mixin _$DestinationStore on DestinationStoreBase, Store {
   }
 
   late final _$isLoadingAtom = Atom(
-    name: 'DestinationStoreBase.isLoading',
+    name: 'DestinationListStoreBase.isLoading',
     context: context,
   );
 
@@ -69,7 +69,7 @@ mixin _$DestinationStore on DestinationStoreBase, Store {
   }
 
   late final _$isLoadingMoreAtom = Atom(
-    name: 'DestinationStoreBase.isLoadingMore',
+    name: 'DestinationListStoreBase.isLoadingMore',
     context: context,
   );
 
@@ -87,7 +87,7 @@ mixin _$DestinationStore on DestinationStoreBase, Store {
   }
 
   late final _$hasMorePagesAtom = Atom(
-    name: 'DestinationStoreBase.hasMorePages',
+    name: 'DestinationListStoreBase.hasMorePages',
     context: context,
   );
 
@@ -105,7 +105,7 @@ mixin _$DestinationStore on DestinationStoreBase, Store {
   }
 
   late final _$currentPageAtom = Atom(
-    name: 'DestinationStoreBase.currentPage',
+    name: 'DestinationListStoreBase.currentPage',
     context: context,
   );
 
@@ -123,7 +123,7 @@ mixin _$DestinationStore on DestinationStoreBase, Store {
   }
 
   late final _$errorMessageAtom = Atom(
-    name: 'DestinationStoreBase.errorMessage',
+    name: 'DestinationListStoreBase.errorMessage',
     context: context,
   );
 
@@ -140,62 +140,8 @@ mixin _$DestinationStore on DestinationStoreBase, Store {
     });
   }
 
-  late final _$selectedDestinationAtom = Atom(
-    name: 'DestinationStoreBase.selectedDestination',
-    context: context,
-  );
-
-  @override
-  Destination? get selectedDestination {
-    _$selectedDestinationAtom.reportRead();
-    return super.selectedDestination;
-  }
-
-  @override
-  set selectedDestination(Destination? value) {
-    _$selectedDestinationAtom.reportWrite(value, super.selectedDestination, () {
-      super.selectedDestination = value;
-    });
-  }
-
-  late final _$nearbyPoisAtom = Atom(
-    name: 'DestinationStoreBase.nearbyPois',
-    context: context,
-  );
-
-  @override
-  ObservableList<NearbyPoi> get nearbyPois {
-    _$nearbyPoisAtom.reportRead();
-    return super.nearbyPois;
-  }
-
-  @override
-  set nearbyPois(ObservableList<NearbyPoi> value) {
-    _$nearbyPoisAtom.reportWrite(value, super.nearbyPois, () {
-      super.nearbyPois = value;
-    });
-  }
-
-  late final _$isLoadingNearbyAtom = Atom(
-    name: 'DestinationStoreBase.isLoadingNearby',
-    context: context,
-  );
-
-  @override
-  bool get isLoadingNearby {
-    _$isLoadingNearbyAtom.reportRead();
-    return super.isLoadingNearby;
-  }
-
-  @override
-  set isLoadingNearby(bool value) {
-    _$isLoadingNearbyAtom.reportWrite(value, super.isLoadingNearby, () {
-      super.isLoadingNearby = value;
-    });
-  }
-
   late final _$searchQueryAtom = Atom(
-    name: 'DestinationStoreBase.searchQuery',
+    name: 'DestinationListStoreBase.searchQuery',
     context: context,
   );
 
@@ -213,7 +159,7 @@ mixin _$DestinationStore on DestinationStoreBase, Store {
   }
 
   late final _$isSearchingWithAiAtom = Atom(
-    name: 'DestinationStoreBase.isSearchingWithAi',
+    name: 'DestinationListStoreBase.isSearchingWithAi',
     context: context,
   );
 
@@ -231,7 +177,7 @@ mixin _$DestinationStore on DestinationStoreBase, Store {
   }
 
   late final _$loadDestinationsAsyncAction = AsyncAction(
-    'DestinationStoreBase.loadDestinations',
+    'DestinationListStoreBase.loadDestinations',
     context: context,
   );
 
@@ -240,32 +186,8 @@ mixin _$DestinationStore on DestinationStoreBase, Store {
     return _$loadDestinationsAsyncAction.run(() => super.loadDestinations());
   }
 
-  late final _$loadDestinationByIdAsyncAction = AsyncAction(
-    'DestinationStoreBase.loadDestinationById',
-    context: context,
-  );
-
-  @override
-  Future<void> loadDestinationById(String xid) {
-    return _$loadDestinationByIdAsyncAction.run(
-      () => super.loadDestinationById(xid),
-    );
-  }
-
-  late final _$loadNearbyPoisAsyncAction = AsyncAction(
-    'DestinationStoreBase.loadNearbyPois',
-    context: context,
-  );
-
-  @override
-  Future<void> loadNearbyPois(String destinationXid, double lat, double lon) {
-    return _$loadNearbyPoisAsyncAction.run(
-      () => super.loadNearbyPois(destinationXid, lat, lon),
-    );
-  }
-
   late final _$searchWithAiAsyncAction = AsyncAction(
-    'DestinationStoreBase.searchWithAi',
+    'DestinationListStoreBase.searchWithAi',
     context: context,
   );
 
@@ -274,56 +196,44 @@ mixin _$DestinationStore on DestinationStoreBase, Store {
     return _$searchWithAiAsyncAction.run(() => super.searchWithAi());
   }
 
-  late final _$DestinationStoreBaseActionController = ActionController(
-    name: 'DestinationStoreBase',
+  late final _$DestinationListStoreBaseActionController = ActionController(
+    name: 'DestinationListStoreBase',
     context: context,
   );
 
   @override
-  void clearSelectedDestination() {
-    final _$actionInfo = _$DestinationStoreBaseActionController.startAction(
-      name: 'DestinationStoreBase.clearSelectedDestination',
-    );
-    try {
-      return super.clearSelectedDestination();
-    } finally {
-      _$DestinationStoreBaseActionController.endAction(_$actionInfo);
-    }
-  }
-
-  @override
   void setSearchQuery(String query) {
-    final _$actionInfo = _$DestinationStoreBaseActionController.startAction(
-      name: 'DestinationStoreBase.setSearchQuery',
+    final _$actionInfo = _$DestinationListStoreBaseActionController.startAction(
+      name: 'DestinationListStoreBase.setSearchQuery',
     );
     try {
       return super.setSearchQuery(query);
     } finally {
-      _$DestinationStoreBaseActionController.endAction(_$actionInfo);
+      _$DestinationListStoreBaseActionController.endAction(_$actionInfo);
     }
   }
 
   @override
   void clearSearch() {
-    final _$actionInfo = _$DestinationStoreBaseActionController.startAction(
-      name: 'DestinationStoreBase.clearSearch',
+    final _$actionInfo = _$DestinationListStoreBaseActionController.startAction(
+      name: 'DestinationListStoreBase.clearSearch',
     );
     try {
       return super.clearSearch();
     } finally {
-      _$DestinationStoreBaseActionController.endAction(_$actionInfo);
+      _$DestinationListStoreBaseActionController.endAction(_$actionInfo);
     }
   }
 
   @override
   void updateDestinationImage(String xid, String imageUrl) {
-    final _$actionInfo = _$DestinationStoreBaseActionController.startAction(
-      name: 'DestinationStoreBase.updateDestinationImage',
+    final _$actionInfo = _$DestinationListStoreBaseActionController.startAction(
+      name: 'DestinationListStoreBase.updateDestinationImage',
     );
     try {
       return super.updateDestinationImage(xid, imageUrl);
     } finally {
-      _$DestinationStoreBaseActionController.endAction(_$actionInfo);
+      _$DestinationListStoreBaseActionController.endAction(_$actionInfo);
     }
   }
 
@@ -336,9 +246,6 @@ isLoadingMore: ${isLoadingMore},
 hasMorePages: ${hasMorePages},
 currentPage: ${currentPage},
 errorMessage: ${errorMessage},
-selectedDestination: ${selectedDestination},
-nearbyPois: ${nearbyPois},
-isLoadingNearby: ${isLoadingNearby},
 searchQuery: ${searchQuery},
 isSearchingWithAi: ${isSearchingWithAi},
 isSearchActive: ${isSearchActive},

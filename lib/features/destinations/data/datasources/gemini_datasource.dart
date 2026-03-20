@@ -3,31 +3,8 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
-import '../../../../core/api/api_client.dart';
-
-/// Destination data returned by Gemini (excludes image — resolved via Wikidata).
-class GeminiDestinationDto {
-  const GeminiDestinationDto({
-    required this.name,
-    required this.description,
-    required this.latitude,
-    required this.longitude,
-    required this.category,
-    required this.highlight,
-    required this.address,
-  });
-
-  final String name;
-  final String description;
-  final double latitude;
-  final double longitude;
-  final String category;
-  final String highlight;
-  final String address;
-
-  @override
-  String toString() => 'GeminiDestinationDto($name)';
-}
+import '../../../../app/config/api_client.dart';
+import '../models/gemini_destination_dto.dart';
 
 /// All Gemini interactions: destination batches, AI tips, and smart search.
 class GeminiDataSource {

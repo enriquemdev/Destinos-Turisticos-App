@@ -4,30 +4,30 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../../core/di.dart';
-import '../../../../core/router.dart';
+import '../../../../app/di.dart';
+import '../../../../app/navigation/router.dart';
 import '../../data/models/destination_model.dart';
-import '../store/destination_store.dart';
+import '../stores/destination_list_store.dart';
 import '../widgets/destination_card.dart';
 import '../widgets/destination_skeleton.dart';
 import '../widgets/list_footer.dart';
 
-class ListScreen extends StatefulWidget {
-  const ListScreen({super.key});
+class ListPage extends StatefulWidget {
+  const ListPage({super.key});
 
   @override
-  State<ListScreen> createState() => _ListScreenState();
+  State<ListPage> createState() => _ListPageState();
 }
 
-class _ListScreenState extends State<ListScreen> {
-  late final DestinationStore _store;
+class _ListPageState extends State<ListPage> {
+  late final DestinationListStore _store;
   late final TextEditingController _searchController;
   late final ScrollController _scrollController;
 
   @override
   void initState() {
     super.initState();
-    _store = sl<DestinationStore>();
+    _store = sl<DestinationListStore>();
     _searchController = TextEditingController();
     _scrollController = ScrollController();
 
@@ -240,7 +240,6 @@ class _ListScreenState extends State<ListScreen> {
       );
     }
 
-    // Show total count hint when filtering
     return AnimationLimiter(
       child: ListView.separated(
         controller: _scrollController,

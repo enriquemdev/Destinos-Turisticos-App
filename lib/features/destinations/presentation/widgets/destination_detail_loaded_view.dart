@@ -3,7 +3,7 @@ import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../data/models/destination_model.dart';
-import '../store/destination_store.dart';
+import '../stores/destination_detail_store.dart';
 import 'category_badge.dart';
 import 'destination_map.dart';
 import 'nearby_pois_section.dart';
@@ -17,7 +17,7 @@ class DestinationDetailLoadedView extends StatelessWidget {
   });
 
   final Destination destination;
-  final DestinationStore store;
+  final DestinationDetailStore store;
 
   @override
   Widget build(BuildContext context) {

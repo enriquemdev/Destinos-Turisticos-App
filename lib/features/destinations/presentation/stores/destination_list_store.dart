@@ -2,18 +2,17 @@ import 'package:flutter/foundation.dart';
 import 'package:mobx/mobx.dart';
 
 import '../../data/models/destination_model.dart';
-import '../../data/models/nearby_poi.dart';
-import '../../data/repository/destination_repository.dart';
+import '../../domain/repositories/i_destination_repository.dart';
 
-part 'destination_store.g.dart';
+part 'destination_list_store.g.dart';
 
-class DestinationStore = DestinationStoreBase with _$DestinationStore;
+class DestinationListStore = DestinationListStoreBase with _$DestinationListStore;
 
-abstract class DestinationStoreBase with Store {
-  DestinationStoreBase({required DestinationRepository repository})
-    : _repository = repository;
+abstract class DestinationListStoreBase with Store {
+  DestinationListStoreBase({required IDestinationRepository repository})
+      : _repository = repository;
 
-  final DestinationRepository _repository;
+  final IDestinationRepository _repository;
 
   // List & Pagination
 
@@ -34,19 +33,6 @@ abstract class DestinationStoreBase with Store {
 
   @observable
   String? errorMessage;
-
-  // Detail
-
-  @observable
-  Destination? selectedDestination;
-
-  // Nearby POIs
-
-  @observable
-  ObservableList<NearbyPoi> nearbyPois = ObservableList<NearbyPoi>();
-
-  @observable
-  bool isLoadingNearby = false;
 
   // Search
 
@@ -112,13 +98,13 @@ abstract class DestinationStoreBase with Store {
     // Disable pagination while searching
     if (isLoadingMore || !hasMorePages || isSearchActive) {
       debugPrint(
-        '[Store] fetchMoreItems: skipped (isLoadingMore=$isLoadingMore '
+        '[ListStore] fetchMoreItems: skipped (isLoadingMore=$isLoadingMore '
         'hasMorePages=$hasMorePages isSearchActive=$isSearchActive)',
       );
       return;
     }
 
-    debugPrint('[Store] fetchMoreItems: requesting page=${currentPage + 1}');
+    debugPrint('[ListStore] fetchMoreItems: requesting page=${currentPage + 1}');
     runInAction(() => isLoadingMore = true);
     // Let the next frame paint the footer loader before awaiting network/DB.
     await Future<void>.delayed(Duration.zero);
@@ -135,7 +121,7 @@ abstract class DestinationStoreBase with Store {
         hasMorePages = result.hasMore;
         isLoadingMore = false;
         debugPrint(
-          '[Store] fetchMoreItems: got ${result.items.length} items '
+          '[ListStore] fetchMoreItems: got ${result.items.length} items '
           'hasMore=${result.hasMore} → totalDestinations=${destinations.length}',
         );
       });
@@ -145,69 +131,6 @@ abstract class DestinationStoreBase with Store {
         isLoadingMore = false;
         hasMorePages = false;
       });
-    }
-  }
-
-  // Actions: Detail
-
-  @action
-  Future<void> loadDestinationById(String xid) async {
-    runInAction(() {
-      isLoading = true;
-      errorMessage = null;
-      selectedDestination = null;
-      nearbyPois.clear();
-    });
-    try {
-      final destination = await _repository.getDestinationById(xid);
-      runInAction(() {
-        selectedDestination = destination;
-        if (destination != null && destination.imageUrl != null) {
-          final idx = destinations.indexWhere((d) => d.xid == destination.xid);
-          if (idx != -1 && destinations[idx].imageUrl != destination.imageUrl) {
-            destinations[idx] = destinations[idx].copyWith(
-              imageUrl: destination.imageUrl,
-            );
-          }
-        }
-        isLoading = false;
-      });
-    } catch (e) {
-      runInAction(() {
-        errorMessage = e.toString();
-        isLoading = false;
-      });
-    }
-  }
-
-  @action
-  void clearSelectedDestination() {
-    selectedDestination = null;
-    nearbyPois.clear();
-    isLoadingNearby = false;
-  }
-
-  // Actions: Nearby POIs
-
-  @action
-  Future<void> loadNearbyPois(
-    String destinationXid,
-    double lat,
-    double lon,
-  ) async {
-    if (isLoadingNearby) return;
-    runInAction(() {
-      isLoadingNearby = true;
-      nearbyPois.clear();
-    });
-    try {
-      final pois = await _repository.getNearbyPois(destinationXid, lat, lon);
-      runInAction(() {
-        nearbyPois = ObservableList<NearbyPoi>.of(pois);
-        isLoadingNearby = false;
-      });
-    } catch (e) {
-      runInAction(() => isLoadingNearby = false);
     }
   }
 

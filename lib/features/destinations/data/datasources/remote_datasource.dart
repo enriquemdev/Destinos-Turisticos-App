@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 
-import '../../../../core/api/api_client.dart';
+import '../../../../app/config/api_client.dart';
 import '../models/nearby_poi.dart';
 
 /// Exception thrown when OTM API calls fail.

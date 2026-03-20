@@ -64,7 +64,7 @@ class ApiClient {
         receiveTimeout: const Duration(seconds: 15),
         // Nominatim requires a valid User-Agent identifying the app
         headers: {
-          'User-Agent': 'DestinosTuristicosApp/1.0 (enriquemdev@gmail.com)',
+          'User-Agent': 'DestinosTuristicosApp/1.0 (enriquemunozdev@gmail.com)',
           'Accept-Language': 'es',
         },
       ),
@@ -86,7 +86,7 @@ class ApiClient {
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 15),
         headers: {
-          'User-Agent': 'DestinosTuristicosApp/1.0 (enriquemdev@gmail.com)',
+          'User-Agent': 'DestinosTuristicosApp/1.0 (enriquemunozdev@gmail.com)',
         },
       ),
     );

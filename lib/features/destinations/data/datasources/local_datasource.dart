@@ -1,7 +1,7 @@
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
-import '../../../../core/constants/app_constants.dart';
+import '../../../../app/constants/app_constants.dart';
 import '../models/destination_model.dart';
 import '../models/nearby_poi.dart';
 

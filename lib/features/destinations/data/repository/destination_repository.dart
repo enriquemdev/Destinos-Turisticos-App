@@ -1,48 +1,15 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 
-import '../../../../core/constants/app_constants.dart';
+import '../../../../app/constants/app_constants.dart';
+import '../../domain/destination_page_result.dart';
+import '../../domain/repositories/i_destination_repository.dart';
 import '../datasources/gemini_datasource.dart';
 import '../datasources/local_datasource.dart';
 import '../datasources/remote_datasource.dart';
 import '../datasources/wikimedia_datasource.dart';
 import '../models/destination_model.dart';
 import '../models/nearby_poi.dart';
-
-/// One page of destinations plus whether more can still be loaded.
-///
-/// [hasMore] is false only when [items] is empty, or when [items] is a
-/// partial page while offline (no further Gemini batches possible).
-class DestinationsPageLoadResult {
-  const DestinationsPageLoadResult({
-    required this.items,
-    required this.hasMore,
-  });
-
-  final List<Destination> items;
-  final bool hasMore;
-}
-
-/// Whether the "load more" button should be shown after loading [items].
-///
-/// - totalCount >= [maxDestinations] ⇒ false (hard cap reached).
-/// - Empty page ⇒ false.
-/// - Full page ⇒ true (more local rows likely exist).
-/// - Partial page + online ⇒ true (can ask Gemini for more).
-/// - Partial page + offline + totalCount < [maxDestinations] ⇒ true
-///   (don't hide button too early; just stop fetching until online).
-/// - Partial page + offline + totalCount >= [maxDestinations] ⇒ false.
-bool computeDestinationsHasMore(
-  List<Destination> items, {
-  required bool online,
-  required int totalCount,
-}) {
-  if (totalCount >= maxDestinations) return false;
-  if (items.isEmpty) return totalCount < maxDestinations;
-  if (items.length >= pageSize) return true;
-  if (online) return true;
-  return totalCount < maxDestinations;
-}
 
 /// Offline-first repository.
 ///
@@ -58,7 +25,7 @@ bool computeDestinationsHasMore(
 
 enum _GeminiFillOutcome { progressed, emptyBatch, noNetNewRows }
 
-class DestinationRepository {
+class DestinationRepository implements IDestinationRepository {
   DestinationRepository({
     required DatabaseHelper local,
     required DestinationsRemoteDataSource remote,
@@ -182,6 +149,7 @@ class DestinationRepository {
   /// Returns a page of destinations and whether infinite scroll should continue.
   ///
   /// Triggers a Gemini batch fetch if SQLite doesn't have enough for [page].
+  @override
   Future<DestinationsPageLoadResult> getDestinationsPage(int page) async {
     final offset = page * pageSize;
     var count = await _local.getCount();
@@ -237,10 +205,12 @@ class DestinationRepository {
     return DestinationsPageLoadResult(items: items, hasMore: hasMore);
   }
 
+  @override
   Future<int> getTotalCount() => _local.getCount();
 
   // Detail
 
+  @override
   Future<Destination?> getDestinationById(String xid) async {
     return _local.getById(xid);
   }
@@ -251,6 +221,7 @@ class DestinationRepository {
   ///
   /// Reads SQLite cache first. If empty and online, fetches from OTM and
   /// persists before returning so subsequent calls are offline-capable.
+  @override
   Future<List<NearbyPoi>> getNearbyPois(
     String destinationXid,
     double lat,
@@ -273,6 +244,7 @@ class DestinationRepository {
   /// Calls Gemini to find up to 5 destinations matching [query].
   ///
   /// Results are saved to SQLite and image enrichment fires for each new entry.
+  @override
   Future<List<Destination>> searchDestinations(String query) async {
     if (!await _isOnline()) return [];
 

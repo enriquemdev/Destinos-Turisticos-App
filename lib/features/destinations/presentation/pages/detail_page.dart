@@ -2,27 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../../core/di.dart';
-import '../store/destination_store.dart';
+import '../../../../app/di.dart';
+import '../stores/destination_detail_store.dart';
 import '../widgets/destination_detail_loaded_view.dart';
 import '../widgets/detail_hero_image.dart';
 
-class DetailScreen extends StatefulWidget {
-  const DetailScreen({super.key, required this.xid});
+class DetailPage extends StatefulWidget {
+  const DetailPage({super.key, required this.xid});
 
   final String xid;
 
   @override
-  State<DetailScreen> createState() => _DetailScreenState();
+  State<DetailPage> createState() => _DetailPageState();
 }
 
-class _DetailScreenState extends State<DetailScreen> {
-  late final DestinationStore _store;
+class _DetailPageState extends State<DetailPage> {
+  late final DestinationDetailStore _store;
 
   @override
   void initState() {
     super.initState();
-    _store = sl<DestinationStore>();
+    _store = sl<DestinationDetailStore>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.xid.isNotEmpty) {
         _store.loadDestinationById(widget.xid);

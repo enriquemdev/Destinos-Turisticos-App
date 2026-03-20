@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-import 'core/di.dart';
-import 'core/router.dart';
-import 'core/theme.dart';
-import 'features/destinations/data/datasources/local_datasource.dart';
+import 'app/di.dart';
+import 'app/navigation/router.dart';
+import 'app/theme/app_theme.dart';
 import 'features/destinations/presentation/widgets/offline_banner.dart';
 
 /// Bootstraps env, dependency injection, SQLite, and navigation.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: '.env');
-  setupDi();
-  await sl<DatabaseHelper>().init();
+  await setupDi();
   runApp(const App());
 }
 

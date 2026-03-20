@@ -225,7 +225,8 @@ abstract final class AppTheme {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: AppColors.primaryLight, width: 1.5),
+            borderSide:
+                const BorderSide(color: AppColors.primaryLight, width: 1.5),
           ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,

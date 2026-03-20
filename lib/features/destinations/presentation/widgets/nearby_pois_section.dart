@@ -3,7 +3,7 @@ import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../data/models/nearby_poi.dart';
-import '../store/destination_store.dart';
+import '../stores/destination_detail_store.dart';
 
 /// "Explorar Alrededores" section for the detail screen.
 ///
@@ -18,7 +18,7 @@ class NearbyPoisSection extends StatefulWidget {
     required this.longitude,
   });
 
-  final DestinationStore store;
+  final DestinationDetailStore store;
   final String destinationXid;
   final double latitude;
   final double longitude;
