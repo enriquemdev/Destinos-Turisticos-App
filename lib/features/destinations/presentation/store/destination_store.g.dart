@@ -151,6 +151,42 @@ mixin _$DestinationStore on DestinationStoreBase, Store {
     });
   }
 
+  late final _$nearbyPoisAtom = Atom(
+    name: 'DestinationStoreBase.nearbyPois',
+    context: context,
+  );
+
+  @override
+  ObservableList<NearbyPoi> get nearbyPois {
+    _$nearbyPoisAtom.reportRead();
+    return super.nearbyPois;
+  }
+
+  @override
+  set nearbyPois(ObservableList<NearbyPoi> value) {
+    _$nearbyPoisAtom.reportWrite(value, super.nearbyPois, () {
+      super.nearbyPois = value;
+    });
+  }
+
+  late final _$isLoadingNearbyAtom = Atom(
+    name: 'DestinationStoreBase.isLoadingNearby',
+    context: context,
+  );
+
+  @override
+  bool get isLoadingNearby {
+    _$isLoadingNearbyAtom.reportRead();
+    return super.isLoadingNearby;
+  }
+
+  @override
+  set isLoadingNearby(bool value) {
+    _$isLoadingNearbyAtom.reportWrite(value, super.isLoadingNearby, () {
+      super.isLoadingNearby = value;
+    });
+  }
+
   late final _$searchQueryAtom = Atom(
     name: 'DestinationStoreBase.searchQuery',
     context: context,
@@ -301,6 +337,18 @@ mixin _$DestinationStore on DestinationStoreBase, Store {
     );
   }
 
+  late final _$loadNearbyPoisAsyncAction = AsyncAction(
+    'DestinationStoreBase.loadNearbyPois',
+    context: context,
+  );
+
+  @override
+  Future<void> loadNearbyPois(double lat, double lon) {
+    return _$loadNearbyPoisAsyncAction.run(
+      () => super.loadNearbyPois(lat, lon),
+    );
+  }
+
   late final _$loadAiTipsAsyncAction = AsyncAction(
     'DestinationStoreBase.loadAiTips',
     context: context,
@@ -374,6 +422,8 @@ hasMorePages: ${hasMorePages},
 currentPage: ${currentPage},
 errorMessage: ${errorMessage},
 selectedDestination: ${selectedDestination},
+nearbyPois: ${nearbyPois},
+isLoadingNearby: ${isLoadingNearby},
 searchQuery: ${searchQuery},
 isSearchMode: ${isSearchMode},
 isSearchingWithAi: ${isSearchingWithAi},

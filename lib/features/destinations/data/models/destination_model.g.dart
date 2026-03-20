@@ -15,10 +15,6 @@ _Destination _$DestinationFromJson(Map<String, dynamic> json) => _Destination(
   latitude: (json['latitude'] as num).toDouble(),
   longitude: (json['longitude'] as num).toDouble(),
   address: json['address'] as String?,
-  url: json['url'] as String?,
-  wikipedia: json['wikipedia'] as String?,
-  osm: json['osm'] as String?,
-  rate: (json['rate'] as num?)?.toDouble(),
   highlight: json['highlight'] as String?,
   aiTips: json['aiTips'] as String?,
 );
@@ -33,10 +29,6 @@ Map<String, dynamic> _$DestinationToJson(_Destination instance) =>
       'latitude': instance.latitude,
       'longitude': instance.longitude,
       'address': instance.address,
-      'url': instance.url,
-      'wikipedia': instance.wikipedia,
-      'osm': instance.osm,
-      'rate': instance.rate,
       'highlight': instance.highlight,
       'aiTips': instance.aiTips,
     };

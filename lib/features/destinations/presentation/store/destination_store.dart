@@ -2,6 +2,7 @@ import 'package:mobx/mobx.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../data/models/destination_model.dart';
+import '../../data/models/nearby_poi.dart';
 import '../../data/repository/destination_repository.dart';
 
 part 'destination_store.g.dart';
@@ -38,6 +39,14 @@ abstract class DestinationStoreBase with Store {
 
   @observable
   Destination? selectedDestination;
+
+  // Nearby POIs
+
+  @observable
+  ObservableList<NearbyPoi> nearbyPois = ObservableList<NearbyPoi>();
+
+  @observable
+  bool isLoadingNearby = false;
 
   // Search
 
@@ -85,11 +94,10 @@ abstract class DestinationStoreBase with Store {
     });
     try {
       final list = await _repository.getDestinationsPage(0);
-      final total = await _repository.getTotalCount();
       runInAction(() {
         destinations = ObservableList<Destination>.of(list);
         currentPage = 0;
-        hasMorePages = list.length >= pageSize && destinations.length < total;
+        hasMorePages = list.length >= pageSize;
         isLoading = false;
       });
     } catch (e) {
@@ -109,18 +117,22 @@ abstract class DestinationStoreBase with Store {
     try {
       final nextPage = currentPage + 1;
       final list = await _repository.getDestinationsPage(nextPage);
-      final total = await _repository.getTotalCount();
 
       runInAction(() {
-        destinations.addAll(list);
-        currentPage = nextPage;
-        hasMorePages = list.length >= pageSize && destinations.length < total;
+        if (list.isEmpty) {
+          hasMorePages = false;
+        } else {
+          destinations.addAll(list);
+          currentPage = nextPage;
+          hasMorePages = list.length >= pageSize;
+        }
         isLoadingMore = false;
       });
     } catch (e) {
       runInAction(() {
         errorMessage = e.toString();
         isLoadingMore = false;
+        hasMorePages = false;
       });
     }
   }
@@ -137,11 +149,10 @@ abstract class DestinationStoreBase with Store {
     try {
       await _repository.refresh();
       final list = await _repository.getDestinationsPage(0);
-      final total = await _repository.getTotalCount();
       runInAction(() {
         destinations = ObservableList<Destination>.of(list);
         currentPage = 0;
-        hasMorePages = list.length >= pageSize && destinations.length < total;
+        hasMorePages = list.length >= pageSize;
         isLoading = false;
       });
     } catch (e) {
@@ -161,12 +172,12 @@ abstract class DestinationStoreBase with Store {
       errorMessage = null;
       selectedDestination = null;
       aiTips = null;
+      nearbyPois.clear();
     });
     try {
       final destination = await _repository.getDestinationById(xid);
       runInAction(() {
         selectedDestination = destination;
-        // Pre-load cached tips if any
         aiTips = destination?.aiTips;
         isLoading = false;
       });
@@ -183,6 +194,28 @@ abstract class DestinationStoreBase with Store {
     selectedDestination = null;
     aiTips = null;
     isLoadingTips = false;
+    nearbyPois.clear();
+    isLoadingNearby = false;
+  }
+
+  // Actions: Nearby POIs
+
+  @action
+  Future<void> loadNearbyPois(double lat, double lon) async {
+    if (isLoadingNearby) return;
+    runInAction(() {
+      isLoadingNearby = true;
+      nearbyPois.clear();
+    });
+    try {
+      final pois = await _repository.getNearbyPois(lat, lon);
+      runInAction(() {
+        nearbyPois = ObservableList<NearbyPoi>.of(pois);
+        isLoadingNearby = false;
+      });
+    } catch (e) {
+      runInAction(() => isLoadingNearby = false);
+    }
   }
 
   // Actions: AI Tips
@@ -197,23 +230,16 @@ abstract class DestinationStoreBase with Store {
       aiTips = null;
     });
     try {
-      final tips = await _repository.getAiTips(
-        dest.xid,
-        dest.name,
-        dest.category,
-      );
+      final tips = await _repository.getAiTips(dest.xid, dest.name, dest.category);
       runInAction(() {
         aiTips = tips;
-        // Update the selected destination with cached tips
         if (tips != null) {
           selectedDestination = dest.copyWith(aiTips: tips);
         }
         isLoadingTips = false;
       });
     } catch (e) {
-      runInAction(() {
-        isLoadingTips = false;
-      });
+      runInAction(() => isLoadingTips = false);
     }
   }
 
@@ -222,9 +248,7 @@ abstract class DestinationStoreBase with Store {
   @action
   void setSearchQuery(String query) {
     searchQuery = query;
-    if (query.trim().isEmpty) {
-      exitSearchMode();
-    }
+    if (query.trim().isEmpty) exitSearchMode();
   }
 
   @action

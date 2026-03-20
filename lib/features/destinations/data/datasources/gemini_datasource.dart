@@ -4,34 +4,33 @@ import 'package:dio/dio.dart';
 
 import '../../../../core/api/api_client.dart';
 
-/// Lightweight DTO returned by Gemini for destination discovery.
+/// Full data for a destination returned by Gemini.
 class GeminiDestinationDto {
   const GeminiDestinationDto({
     required this.name,
+    required this.description,
+    required this.imageUrl,
     required this.latitude,
     required this.longitude,
     required this.category,
     required this.highlight,
+    required this.address,
   });
 
   final String name;
+  final String description;
+  final String imageUrl;
   final double latitude;
   final double longitude;
   final String category;
   final String highlight;
+  final String address;
 
   @override
   String toString() => 'GeminiDestinationDto($name)';
 }
 
-/// All interactions with Gemini Flash 2.5.
-///
-/// Responsibilities:
-///   1. Provide a curated list of top Nicaragua tourist destinations.
-///   2. Generate travel tips for a specific destination (cached after first call).
-///   3. Search destinations by natural language query.
-///
-/// Token usage is kept minimal by requesting small, structured responses.
+/// All Gemini interactions: destination batches, AI tips, and smart search.
 class GeminiDataSource {
   GeminiDataSource({Dio? dio}) : _dio = dio ?? ApiClient.createGemini();
 
@@ -39,60 +38,64 @@ class GeminiDataSource {
 
   static const String _model = 'models/gemini-2.5-flash-lite';
 
-  // ── Public API ──────────────────────────────────────────────────────────────
+  // Public API
 
-  /// Returns ~25 curated top tourist destinations in Nicaragua.
-  /// Each entry includes coordinates for OpenTripMap enrichment.
-  Future<List<GeminiDestinationDto>> fetchTopDestinations() async {
-    const prompt = '''
-Return a JSON array of the top 15 tourist destinations in Nicaragua.
-Each object must have EXACTLY these fields (no extras):
-  "name": string (in Spanish, official place name),
-  "latitude": number,
+  /// Returns a batch of 10 Nicaragua tourist destinations excluding [excludeNames].
+  Future<List<GeminiDestinationDto>> fetchBatch(
+    List<String> excludeNames,
+  ) async {
+    final exclusion = excludeNames.isNotEmpty
+        ? 'Excluye estos destinos que ya tengo: ${excludeNames.join(', ')}.'
+        : '';
+
+    final prompt = '''
+Eres un experto en turismo de Nicaragua. $exclusion
+
+Devuelve un JSON array de exactamente 10 destinos turísticos de Nicaragua que NO estén en la lista de exclusión.
+Incluye variedad: volcanes, ciudades coloniales, playas, lagos, reservas naturales, sitios culturales.
+
+Cada objeto DEBE tener EXACTAMENTE estos campos (sin extras):
+  "name": string (nombre oficial del lugar en español),
+  "description": string (descripción atractiva en español, 2-3 oraciones),
+  "imageUrl": string (URL directa a una imagen real del lugar, preferiblemente de Wikipedia Commons o fuente pública confiable),
+  "category": string (uno de: naturaleza, cultura, historia, playa, aventura, gastronomia, ciudad),
+  "highlight": string (una oración impactante en español, máximo 15 palabras),
+  "latitude": number (coordenadas GPS precisas),
   "longitude": number,
-  "category": string (one of: naturaleza, cultura, historia, playa, aventura, gastronomia, ciudad),
-  "highlight": string (one compelling sentence in Spanish, max 20 words).
+  "address": string (dirección legible, ciudad o departamento en Nicaragua)
 
-Include a mix of: volcanoes, colonial cities, beaches, lakes, nature reserves, and cultural sites.
-Respond ONLY with the raw JSON array. No markdown, no explanation.
+Responde ÚNICAMENTE con el JSON array. Sin markdown, sin explicación.
 ''';
 
     final raw = await _callGemini(prompt);
-    return _parseDestinationList(raw);
+    return _parseBatch(raw);
   }
 
-  /// Generates concise travel tips for a specific destination.
-  /// Result should be cached in SQLite to avoid redundant calls.
+  /// Generates 3 travel tips for [destinationName].
   Future<String> fetchAiTips(String destinationName, String category) async {
     final prompt = '''
-Write 3 short travel tips in Spanish for visiting "$destinationName" ($category) in Nicaragua.
-Format as a numbered list. Each tip max 2 sentences. Be practical and specific.
-Respond ONLY with the numbered list. No introduction, no markdown.
+Escribe 3 consejos de viaje en español para visitar "$destinationName" ($category) en Nicaragua.
+Formato: lista numerada. Cada consejo máximo 2 oraciones. Sé práctico y específico.
+Responde ÚNICAMENTE con la lista numerada. Sin introducción, sin markdown.
 ''';
-
     return _callGemini(prompt);
   }
 
-  /// Searches for Nicaragua tourist destinations matching [query].
-  /// Returns a list of destination DTOs (may be empty if nothing found).
+  /// Searches for Nicaragua destinations matching [query].
   Future<List<GeminiDestinationDto>> searchDestinations(String query) async {
     final prompt = '''
-Return a JSON array of up to 10 Nicaragua tourist destinations matching this search: "$query".
-Each object must have EXACTLY these fields:
-  "name": string (in Spanish, official place name),
-  "latitude": number,
-  "longitude": number,
-  "category": string (one of: naturaleza, cultura, historia, playa, aventura, gastronomia, ciudad),
-  "highlight": string (one compelling sentence in Spanish, max 20 words).
+Busca hasta 5 destinos turísticos de Nicaragua que coincidan con: "$query".
 
-Respond ONLY with the raw JSON array. No markdown, no explanation. Empty array [] if nothing found.
+Cada objeto DEBE tener EXACTAMENTE:
+  "name", "description", "imageUrl", "category", "highlight", "latitude", "longitude", "address"
+
+Responde ÚNICAMENTE con el JSON array. Array vacío [] si no hay resultados.
 ''';
-
     final raw = await _callGemini(prompt);
-    return _parseDestinationList(raw);
+    return _parseBatch(raw);
   }
 
-  // ── Private helpers ─────────────────────────────────────────────────────────
+  // Private
 
   static const int _maxRetries = 3;
   static const Duration _retryBaseDelay = Duration(seconds: 3);
@@ -112,64 +115,56 @@ Respond ONLY with the raw JSON array. No markdown, no explanation. Empty array [
               },
             ],
             'generationConfig': {
-              'temperature': 0.4,
-              'maxOutputTokens': 2048,
+              'temperature': 0.5,
+              'maxOutputTokens': 4096,
             },
           },
         );
 
         final data = response.data;
-        if (data == null) {
-          throw GeminiDataSourceException('Empty Gemini response');
-        }
+        if (data == null) throw GeminiDataSourceException('Empty response');
 
         final candidates = data['candidates'] as List<dynamic>?;
         if (candidates == null || candidates.isEmpty) {
-          throw GeminiDataSourceException('No candidates in Gemini response');
+          throw GeminiDataSourceException('No candidates');
         }
 
-        final content =
-            candidates.first['content'] as Map<String, dynamic>?;
+        final content = candidates.first['content'] as Map<String, dynamic>?;
         final parts = content?['parts'] as List<dynamic>?;
         final text = parts?.first['text'] as String?;
 
         if (text == null || text.isEmpty) {
-          throw GeminiDataSourceException('Empty text in Gemini response');
+          throw GeminiDataSourceException('Empty text in response');
         }
 
         return text.trim();
       } on DioException catch (e) {
         final status = e.response?.statusCode;
-
-        // Retry on 429 (rate limit) with exponential backoff
         if (status == 429 && attempt < _maxRetries) {
           await Future<void>.delayed(_retryBaseDelay * (attempt + 1));
           continue;
         }
-
         if (status == 429) {
           throw GeminiDataSourceException(
-            'Gemini rate limit exceeded after $_maxRetries retries. Try again later.',
+            'Rate limit exceeded after $_maxRetries retries.',
           );
         }
         if (status == 401 || status == 403) {
           throw GeminiDataSourceException('Invalid Gemini API key.');
         }
-        throw GeminiDataSourceException(e.message ?? 'Gemini network error.');
+        throw GeminiDataSourceException(e.message ?? 'Network error.');
       }
     }
-    // Should not reach here, but just in case
-    throw GeminiDataSourceException('Gemini request failed after retries.');
+    throw GeminiDataSourceException('Request failed after retries.');
   }
 
-  List<GeminiDestinationDto> _parseDestinationList(String raw) {
+  List<GeminiDestinationDto> _parseBatch(String raw) {
     try {
-      // Strip potential markdown code fences
       var cleaned = raw.trim();
+      // Strip markdown code fences if present
       if (cleaned.startsWith('```')) {
         cleaned = cleaned.replaceAll(RegExp(r'```[a-z]*\n?'), '').trim();
       }
-
       final decoded = jsonDecode(cleaned);
       if (decoded is! List) return [];
 
@@ -188,20 +183,21 @@ Respond ONLY with the raw JSON array. No markdown, no explanation. Empty array [
   GeminiDestinationDto? _parseItem(Map<String, dynamic> json) {
     try {
       final name = json['name'] as String?;
-      final highlight = json['highlight'] as String?;
-      final category = json['category'] as String?;
+      if (name == null || name.isEmpty) return null;
+
       final lat = _toDouble(json['latitude']);
       final lon = _toDouble(json['longitude']);
-
-      if (name == null || name.isEmpty) return null;
       if (lat == null || lon == null) return null;
 
       return GeminiDestinationDto(
         name: name,
+        description: (json['description'] as String?) ?? '',
+        imageUrl: (json['imageUrl'] as String?) ?? '',
+        category: (json['category'] as String?) ?? 'lugar',
+        highlight: (json['highlight'] as String?) ?? '',
         latitude: lat,
         longitude: lon,
-        category: category ?? 'lugar',
-        highlight: highlight ?? '',
+        address: (json['address'] as String?) ?? 'Nicaragua',
       );
     } catch (_) {
       return null;

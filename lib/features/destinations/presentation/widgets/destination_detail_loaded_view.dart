@@ -6,6 +6,7 @@ import '../../data/models/destination_model.dart';
 import '../store/destination_store.dart';
 import 'category_badge.dart';
 import 'destination_map.dart';
+import 'nearby_pois_section.dart';
 
 /// Scrollable content shown when a [Destination] is fully loaded.
 class DestinationDetailLoadedView extends StatelessWidget {
@@ -26,26 +27,14 @@ class DestinationDetailLoadedView extends StatelessWidget {
 
     final address = destination.address?.trim();
     final desc = destination.description?.trim();
-    final url = destination.url?.trim();
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Category + highlight ──────────────────────────────────────────
-          Row(
-            children: [
-              CategoryBadge(
-                category: destination.category,
-                onDark: false,
-              ),
-              if (destination.rate != null) ...[
-                const SizedBox(width: 10),
-                _RatingBadge(rate: destination.rate!, scheme: scheme),
-              ],
-            ],
-          ),
+          // Category badge
+          CategoryBadge(category: destination.category, onDark: false),
           const SizedBox(height: 12),
 
           // Title
@@ -59,6 +48,7 @@ class DestinationDetailLoadedView extends StatelessWidget {
             ),
           ),
 
+          // Highlight tagline
           if (destination.highlight != null && destination.highlight!.isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(
@@ -72,21 +62,20 @@ class DestinationDetailLoadedView extends StatelessWidget {
             ),
           ],
 
-          // ── Location ───────────────────────────────────────────────────────
+          // Location
           if (address != null && address.isNotEmpty) ...[
             const SizedBox(height: 16),
             _InfoRow(
               icon: Icons.place_rounded,
               text: address,
               scheme: scheme,
-              theme: theme,
             ),
           ],
 
-          // ── Description ────────────────────────────────────────────────────
+          // Description
           if (desc != null && desc.isNotEmpty) ...[
             const SizedBox(height: 24),
-            _SectionTitle(title: 'Sobre este destino', theme: theme),
+            _SectionTitle(title: 'Sobre este destino', scheme: scheme),
             const SizedBox(height: 8),
             Text(
               desc,
@@ -98,46 +87,47 @@ class DestinationDetailLoadedView extends StatelessWidget {
             ),
           ],
 
-          // ── AI Tips section ────────────────────────────────────────────────
+          // AI Tips
           const SizedBox(height: 28),
-          _AiTipsSection(store: store, scheme: scheme, theme: theme, isDark: isDark),
+          _AiTipsSection(
+            store: store,
+            scheme: scheme,
+            isDark: isDark,
+          ),
 
-          // ── Map ────────────────────────────────────────────────────────────
+          // Map
           const SizedBox(height: 28),
-          _SectionTitle(title: 'Ubicación', theme: theme),
+          _SectionTitle(title: 'Ubicación', scheme: scheme),
           const SizedBox(height: 12),
           DestinationMap(
             latitude: destination.latitude,
             longitude: destination.longitude,
           ),
 
-          // ── Web link ──────────────────────────────────────────────────────
-          if (url != null && url.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            _InfoRow(
-              icon: Icons.language_rounded,
-              text: url,
-              scheme: scheme,
-              theme: theme,
-            ),
-          ],
+          // Nearby POIs (OTM)
+          const SizedBox(height: 24),
+          NearbyPoisSection(
+            store: store,
+            latitude: destination.latitude,
+            longitude: destination.longitude,
+          ),
         ],
       ),
     );
   }
 }
 
+// AI Tips section
+
 class _AiTipsSection extends StatelessWidget {
   const _AiTipsSection({
     required this.store,
     required this.scheme,
-    required this.theme,
     required this.isDark,
   });
 
   final DestinationStore store;
   final ColorScheme scheme;
-  final ThemeData theme;
   final bool isDark;
 
   @override
@@ -178,7 +168,6 @@ class _AiTipsSection extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
-
               if (tips != null && tips.isNotEmpty)
                 Text(
                   tips,
@@ -201,7 +190,7 @@ class _AiTipsSection extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      'Generando tips con Gemini…',
+                      'Generando con Gemini…',
                       style: GoogleFonts.inter(
                         fontSize: 13,
                         color: scheme.onSurface.withAlpha(150),
@@ -212,7 +201,7 @@ class _AiTipsSection extends StatelessWidget {
                 )
               else ...[
                 Text(
-                  'Genera tips personalizados para este destino usando inteligencia artificial.',
+                  'Genera consejos personalizados para este destino.',
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     color: scheme.onSurface.withAlpha(150),
@@ -242,11 +231,13 @@ class _AiTipsSection extends StatelessWidget {
   }
 }
 
+// Reusable helpers
+
 class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.title, required this.theme});
+  const _SectionTitle({required this.title, required this.scheme});
 
   final String title;
-  final ThemeData theme;
+  final ColorScheme scheme;
 
   @override
   Widget build(BuildContext context) {
@@ -255,7 +246,7 @@ class _SectionTitle extends StatelessWidget {
       style: GoogleFonts.outfit(
         fontSize: 18,
         fontWeight: FontWeight.w700,
-        color: theme.colorScheme.onSurface,
+        color: scheme.onSurface,
       ),
     );
   }
@@ -266,13 +257,11 @@ class _InfoRow extends StatelessWidget {
     required this.icon,
     required this.text,
     required this.scheme,
-    required this.theme,
   });
 
   final IconData icon;
   final String text;
   final ColorScheme scheme;
-  final ThemeData theme;
 
   @override
   Widget build(BuildContext context) {
@@ -292,39 +281,6 @@ class _InfoRow extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _RatingBadge extends StatelessWidget {
-  const _RatingBadge({required this.rate, required this.scheme});
-
-  final double rate;
-  final ColorScheme scheme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFA000).withAlpha(30),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.star_rounded, size: 14, color: Color(0xFFFFA000)),
-          const SizedBox(width: 4),
-          Text(
-            rate.toStringAsFixed(1),
-            style: GoogleFonts.outfit(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFFFFA000),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
