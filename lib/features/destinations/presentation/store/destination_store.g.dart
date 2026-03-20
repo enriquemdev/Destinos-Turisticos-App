@@ -413,6 +413,18 @@ mixin _$DestinationStore on DestinationStoreBase, Store {
   }
 
   @override
+  void updateDestinationImage(String xid, String imageUrl) {
+    final _$actionInfo = _$DestinationStoreBaseActionController.startAction(
+      name: 'DestinationStoreBase.updateDestinationImage',
+    );
+    try {
+      return super.updateDestinationImage(xid, imageUrl);
+    } finally {
+      _$DestinationStoreBaseActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
   String toString() {
     return '''
 destinations: ${destinations},

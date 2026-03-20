@@ -29,6 +29,10 @@ void setupDi() {
     ),
   );
   sl.registerLazySingleton<DestinationStore>(
-    () => DestinationStore(repository: sl<DestinationRepository>()),
+    () {
+      final store = DestinationStore(repository: sl<DestinationRepository>());
+      sl<DestinationRepository>().onImageEnriched = store.updateDestinationImage;
+      return store;
+    },
   );
 }

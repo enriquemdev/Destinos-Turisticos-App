@@ -287,4 +287,23 @@ abstract class DestinationStoreBase with Store {
     searchResults.clear();
     searchQuery = '';
   }
+
+  // Actions: Background Image Enrichment
+
+  @action
+  void updateDestinationImage(String xid, String imageUrl) {
+    _updateImageInList(destinations, xid, imageUrl);
+    _updateImageInList(searchResults, xid, imageUrl);
+  }
+
+  void _updateImageInList(
+    ObservableList<Destination> list,
+    String xid,
+    String imageUrl,
+  ) {
+    final idx = list.indexWhere((d) => d.xid == xid);
+    if (idx != -1) {
+      list[idx] = list[idx].copyWith(imageUrl: imageUrl);
+    }
+  }
 }

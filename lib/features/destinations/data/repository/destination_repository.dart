@@ -25,10 +25,14 @@ class DestinationRepository {
     required DestinationsRemoteDataSource remote,
     required GeminiDataSource gemini,
     required WikimediaDataSource wikimedia,
+    this.onImageEnriched,
   })  : _local = local,
         _remote = remote,
         _gemini = gemini,
         _wikimedia = wikimedia;
+
+  /// Called each time a background image enrichment completes for a destination.
+  void Function(String xid, String imageUrl)? onImageEnriched;
 
   final DatabaseHelper _local;
   final DestinationsRemoteDataSource _remote;
@@ -89,6 +93,7 @@ class DestinationRepository {
         );
         if (url != null && url.isNotEmpty) {
           await _local.updateImageUrl(dest.xid, url);
+          onImageEnriched?.call(dest.xid, url);
         }
       } catch (_) {
         // Non-fatal: destination already saved, just won't have an image
