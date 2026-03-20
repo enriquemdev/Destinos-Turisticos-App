@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/destinations/presentation/pages/detail_page.dart';
-import '../../features/destinations/presentation/pages/list_page.dart';
+import '../../presentation/features/destinations/pages/detail_page.dart';
+import '../../presentation/features/destinations/pages/list_page.dart';
 
 // Route names for navigation.
 abstract final class RouteNames {

@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-import 'package:destinos_turisticos_app/features/destinations/data/datasources/wikimedia_datasource.dart';
+import 'package:destinos_turisticos_app/data/datasources/remote/wikimedia_data_source.dart';
 
 class MockDio extends Mock implements Dio {}
 

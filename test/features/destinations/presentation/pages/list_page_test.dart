@@ -5,19 +5,24 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:get_it/get_it.dart';
 
-import 'package:destinos_turisticos_app/features/destinations/presentation/pages/list_page.dart';
-import 'package:destinos_turisticos_app/features/destinations/presentation/stores/destination_list_store.dart';
-import 'package:destinos_turisticos_app/features/destinations/domain/repositories/i_destination_repository.dart';
-import 'package:destinos_turisticos_app/features/destinations/data/models/destination_model.dart';
-import 'package:destinos_turisticos_app/features/destinations/domain/destination_page_result.dart';
-import 'package:destinos_turisticos_app/features/destinations/presentation/widgets/destination_card.dart';
-import 'package:destinos_turisticos_app/features/destinations/presentation/widgets/destination_skeleton.dart';
+import 'package:destinos_turisticos_app/presentation/features/destinations/pages/list_page.dart';
+import 'package:destinos_turisticos_app/presentation/features/destinations/stores/destination_list_store.dart';
+import 'package:destinos_turisticos_app/presentation/features/destinations/widgets/destination_card.dart';
+import 'package:destinos_turisticos_app/presentation/features/destinations/widgets/destination_skeleton.dart';
+import 'package:destinos_turisticos_app/domain/use_cases/destinations/get_destinations_page_use_case.dart';
+import 'package:destinos_turisticos_app/domain/use_cases/destinations/search_destinations_use_case.dart';
+import 'package:destinos_turisticos_app/domain/dtos/destinations/destination_dto.dart';
+import 'package:destinos_turisticos_app/domain/dtos/destinations/destination_page_result_dto.dart';
 
-class MockDestinationRepository extends Mock
-    implements IDestinationRepository {}
+class MockGetDestinationsPageUseCase extends Mock
+    implements GetDestinationsPageUseCase {}
+
+class MockSearchDestinationsUseCase extends Mock
+    implements SearchDestinationsUseCase {}
 
 void main() {
-  late MockDestinationRepository mockRepository;
+  late MockGetDestinationsPageUseCase mockGetPage;
+  late MockSearchDestinationsUseCase mockSearch;
   late DestinationListStore store;
 
   setUpAll(() {
@@ -25,8 +30,12 @@ void main() {
   });
 
   setUp(() async {
-    mockRepository = MockDestinationRepository();
-    store = DestinationListStore(repository: mockRepository);
+    mockGetPage = MockGetDestinationsPageUseCase();
+    mockSearch = MockSearchDestinationsUseCase();
+    store = DestinationListStore(
+      getDestinationsPage: mockGetPage,
+      searchDestinations: mockSearch,
+    );
 
     await GetIt.instance.reset();
     GetIt.instance.registerSingleton<DestinationListStore>(store);
@@ -40,9 +49,9 @@ void main() {
     testWidgets(
       'Test 9: Verify that ListPage shows DestinationListSkeleton while store is loading',
       (tester) async {
-        final completer = Completer<DestinationsPageLoadResult>();
+        final completer = Completer<DestinationPageResultDto>();
         when(
-          () => mockRepository.getDestinationsPage(any()),
+          () => mockGetPage(any()),
         ).thenAnswer((_) => completer.future);
 
         await tester.pumpWidget(buildTestWidget());
@@ -53,7 +62,7 @@ void main() {
         expect(find.byType(DestinationCard), findsNothing);
 
         completer.complete(
-          const DestinationsPageLoadResult(items: [], hasMore: false),
+          const DestinationPageResultDto(items: [], hasMore: false),
         );
       },
     );
@@ -62,7 +71,7 @@ void main() {
       'Test 10: Verify that ListPage successfully renders a list of DestinationCard widgets when loaded',
       (tester) async {
         final fakeItems = [
-          Destination(
+          const DestinationDto(
             xid: '1',
             name: 'Granada',
             category: 'ciudad',
@@ -70,7 +79,7 @@ void main() {
             longitude: -85,
             createdAt: 1,
           ),
-          Destination(
+          const DestinationDto(
             xid: '2',
             name: 'Leon',
             category: 'ciudad',
@@ -80,9 +89,9 @@ void main() {
           ),
         ];
 
-        when(() => mockRepository.getDestinationsPage(any())).thenAnswer(
+        when(() => mockGetPage(any())).thenAnswer(
           (_) async =>
-              DestinationsPageLoadResult(items: fakeItems, hasMore: false),
+              DestinationPageResultDto(items: fakeItems, hasMore: false),
         );
 
         await tester.pumpWidget(buildTestWidget());

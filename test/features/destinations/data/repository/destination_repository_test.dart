@@ -2,16 +2,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:flutter/services.dart';
 
-import 'package:destinos_turisticos_app/features/destinations/data/repository/destination_repository.dart';
-import 'package:destinos_turisticos_app/features/destinations/data/datasources/gemini_datasource.dart';
-import 'package:destinos_turisticos_app/features/destinations/data/datasources/local_datasource.dart';
-import 'package:destinos_turisticos_app/features/destinations/data/datasources/remote_datasource.dart';
-import 'package:destinos_turisticos_app/features/destinations/data/datasources/wikimedia_datasource.dart';
-import 'package:destinos_turisticos_app/features/destinations/data/models/destination_model.dart';
-import 'package:destinos_turisticos_app/features/destinations/data/models/gemini_destination_dto.dart';
-import 'package:destinos_turisticos_app/features/destinations/domain/destination_page_result.dart';
+import 'package:destinos_turisticos_app/data/repositories_impl/destinations_repository_impl.dart';
+import 'package:destinos_turisticos_app/data/datasources/remote/gemini_data_source.dart';
+import 'package:destinos_turisticos_app/data/datasources/local/destinations_local_data_source.dart';
+import 'package:destinos_turisticos_app/data/datasources/remote/destinations_remote_data_source.dart';
+import 'package:destinos_turisticos_app/data/datasources/remote/wikimedia_data_source.dart';
+import 'package:destinos_turisticos_app/data/models/destinations/gemini_destination_api_model.dart';
+import 'package:destinos_turisticos_app/domain/dtos/destinations/destination_dto.dart';
 
-class MockDatabaseHelper extends Mock implements DatabaseHelper {}
+class MockDestinationsLocalDataSource extends Mock
+    implements DestinationsLocalDataSource {}
 
 class MockDestinationsRemoteDataSource extends Mock
     implements DestinationsRemoteDataSource {}
@@ -23,8 +23,8 @@ class MockWikimediaDataSource extends Mock implements WikimediaDataSource {}
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  late DestinationRepository repository;
-  late MockDatabaseHelper mockLocal;
+  late DestinationsRepositoryImpl repository;
+  late MockDestinationsLocalDataSource mockLocal;
   late MockDestinationsRemoteDataSource mockRemote;
   late MockGeminiDataSource mockGemini;
   late MockWikimediaDataSource mockWikimedia;
@@ -44,7 +44,7 @@ void main() {
 
   setUpAll(() {
     registerFallbackValue(
-      Destination(
+      const DestinationDto(
         xid: 'dummy',
         name: 'dummy',
         category: 'dummy',
@@ -53,15 +53,16 @@ void main() {
         createdAt: 0,
       ),
     );
+    registerFallbackValue(<DestinationDto>[]);
   });
 
   setUp(() {
-    mockLocal = MockDatabaseHelper();
+    mockLocal = MockDestinationsLocalDataSource();
     mockRemote = MockDestinationsRemoteDataSource();
     mockGemini = MockGeminiDataSource();
     mockWikimedia = MockWikimediaDataSource();
 
-    repository = DestinationRepository(
+    repository = DestinationsRepositoryImpl(
       local: mockLocal,
       remote: mockRemote,
       gemini: mockGemini,
@@ -69,14 +70,14 @@ void main() {
     );
   });
 
-  group('DestinationRepository Tests', () {
+  group('DestinationsRepositoryImpl Tests', () {
     test(
       'Test 4: Verify getDestinationsPage behavior when offline (returns local DB data, doesn\'t call Gemini)',
       () async {
         setConnectivityResult('none');
 
         final mockData = [
-          Destination(
+          const DestinationDto(
             xid: '1',
             name: 'León',
             category: 'ciudad',
@@ -104,8 +105,8 @@ void main() {
       () async {
         setConnectivityResult('wifi');
 
-        final dtos = [
-          GeminiDestinationDto(
+        final apiModels = [
+          const GeminiDestinationApiModel(
             name: 'Masaya',
             description: 'Volcan',
             category: 'naturaleza',
@@ -118,18 +119,16 @@ void main() {
 
         when(() => mockLocal.getCount()).thenAnswer((_) async => 0);
         when(() => mockLocal.getAllNames()).thenAnswer((_) async => []);
-
-        when(() => mockGemini.fetchBatch(any())).thenAnswer((_) async => dtos);
-
-        when(() => mockLocal.insertAll(any())).thenAnswer((_) async => [1]);
-
+        when(() => mockGemini.fetchBatch(any()))
+            .thenAnswer((_) async => apiModels);
+        when(() => mockLocal.insertAll(any())).thenAnswer((_) async {});
         when(() => mockLocal.getById(any())).thenAnswer((_) async => null);
         when(
           () => mockWikimedia.fetchImageUrl(any(), any(), any()),
         ).thenAnswer((_) async => 'http://image');
         when(
           () => mockLocal.updateImageUrl(any(), any()),
-        ).thenAnswer((_) async => 1);
+        ).thenAnswer((_) async {});
 
         bool isFirstCall = true;
         when(() => mockLocal.getCount()).thenAnswer((_) async {
@@ -141,7 +140,7 @@ void main() {
         });
 
         final savedItems = [
-          Destination(
+          const DestinationDto(
             xid: 'gem_masaya',
             name: 'Masaya',
             category: 'naturaleza',
@@ -166,10 +165,10 @@ void main() {
       'Test 6: Verify searchDestinations calls Gemini for AI search and saves results to SQLite',
       () async {
         setConnectivityResult('wifi');
-        final query = 'playa';
+        const query = 'playa';
 
-        final searchDtos = [
-          GeminiDestinationDto(
+        final searchModels = [
+          const GeminiDestinationApiModel(
             name: 'Playa Maderas',
             description: 'Surf',
             category: 'playa',
@@ -182,15 +181,15 @@ void main() {
 
         when(
           () => mockGemini.searchDestinations(query),
-        ).thenAnswer((_) async => searchDtos);
-        when(() => mockLocal.insertAll(any())).thenAnswer((_) async => [1]);
+        ).thenAnswer((_) async => searchModels);
+        when(() => mockLocal.insertAll(any())).thenAnswer((_) async {});
         when(() => mockLocal.getById(any())).thenAnswer((_) async => null);
         when(
           () => mockWikimedia.fetchImageUrl(any(), any(), any()),
         ).thenAnswer((_) async => 'http://image');
         when(
           () => mockLocal.updateImageUrl(any(), any()),
-        ).thenAnswer((_) async => 1);
+        ).thenAnswer((_) async {});
 
         final results = await repository.searchDestinations(query);
 

@@ -4,7 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'app/di.dart';
 import 'app/navigation/router.dart';
 import 'app/theme/app_theme.dart';
-import 'features/destinations/presentation/widgets/offline_banner.dart';
+import 'presentation/widgets/offline_banner.dart';
 
 /// Bootstraps env, dependency injection, SQLite, and navigation.
 Future<void> main() async {

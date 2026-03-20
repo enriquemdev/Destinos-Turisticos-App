@@ -2,8 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-import 'package:destinos_turisticos_app/features/destinations/data/datasources/gemini_datasource.dart';
-import 'package:destinos_turisticos_app/features/destinations/data/models/gemini_destination_dto.dart';
+import 'package:destinos_turisticos_app/data/datasources/remote/gemini_data_source.dart';
+import 'package:destinos_turisticos_app/data/models/destinations/gemini_destination_api_model.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class MockDio extends Mock implements Dio {}
@@ -24,7 +24,7 @@ void main() {
     });
 
     test(
-      'Test 1: fetchBatch successfully parses a valid JSON array into DestinationDto objects',
+      'Test 1: fetchBatch successfully parses a valid JSON array into GeminiDestinationApiModel objects',
       () async {
         final validJsonResponse = {
           'candidates': [
@@ -68,7 +68,7 @@ void main() {
 
         final result = await dataSource.fetchBatch([]);
 
-        expect(result, isA<List<GeminiDestinationDto>>());
+        expect(result, isA<List<GeminiDestinationApiModel>>());
         expect(result.length, 1);
         expect(result.first.name, 'Volcán Masaya');
         expect(result.first.category, 'naturaleza');
@@ -85,7 +85,7 @@ void main() {
     );
 
     test(
-      'Test 2: fetchBatch throws a GeminiDataSourceException on API failure or invalid JSON',
+      'Test 2: fetchBatch throws a GeminiDataSourceException on API failure',
       () async {
         when(
           () => mockDio.post<Map<String, dynamic>>(

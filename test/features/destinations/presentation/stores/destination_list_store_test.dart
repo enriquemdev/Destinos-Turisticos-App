@@ -3,38 +3,47 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-import 'package:destinos_turisticos_app/features/destinations/presentation/stores/destination_list_store.dart';
-import 'package:destinos_turisticos_app/features/destinations/domain/repositories/i_destination_repository.dart';
-import 'package:destinos_turisticos_app/features/destinations/data/models/destination_model.dart';
-import 'package:destinos_turisticos_app/features/destinations/domain/destination_page_result.dart';
+import 'package:destinos_turisticos_app/presentation/features/destinations/stores/destination_list_store.dart';
+import 'package:destinos_turisticos_app/domain/use_cases/destinations/get_destinations_page_use_case.dart';
+import 'package:destinos_turisticos_app/domain/use_cases/destinations/search_destinations_use_case.dart';
+import 'package:destinos_turisticos_app/domain/dtos/destinations/destination_dto.dart';
+import 'package:destinos_turisticos_app/domain/dtos/destinations/destination_page_result_dto.dart';
 
-class MockDestinationRepository extends Mock
-    implements IDestinationRepository {}
+class MockGetDestinationsPageUseCase extends Mock
+    implements GetDestinationsPageUseCase {}
+
+class MockSearchDestinationsUseCase extends Mock
+    implements SearchDestinationsUseCase {}
 
 void main() {
   late DestinationListStore store;
-  late MockDestinationRepository mockRepository;
+  late MockGetDestinationsPageUseCase mockGetPage;
+  late MockSearchDestinationsUseCase mockSearch;
 
   setUpAll(() {
     registerFallbackValue(0);
   });
 
   setUp(() {
-    mockRepository = MockDestinationRepository();
-    store = DestinationListStore(repository: mockRepository);
+    mockGetPage = MockGetDestinationsPageUseCase();
+    mockSearch = MockSearchDestinationsUseCase();
+    store = DestinationListStore(
+      getDestinationsPage: mockGetPage,
+      searchDestinations: mockSearch,
+    );
   });
 
   group('DestinationListStore Tests', () {
     test(
       'Test 7: Verify loadDestinations action correctly toggles isLoading, fetches page, and updates list',
       () async {
-        final completer = Completer<DestinationsPageLoadResult>();
+        final completer = Completer<DestinationPageResultDto>();
         when(
-          () => mockRepository.getDestinationsPage(0),
+          () => mockGetPage(0),
         ).thenAnswer((_) => completer.future);
 
         final fakeItems = [
-          Destination(
+          const DestinationDto(
             xid: '1',
             name: 'León',
             category: 'ciudad',
@@ -43,7 +52,7 @@ void main() {
             createdAt: 1,
           ),
         ];
-        final fakeResult = DestinationsPageLoadResult(
+        final fakeResult = DestinationPageResultDto(
           items: fakeItems,
           hasMore: true,
         );
@@ -60,15 +69,15 @@ void main() {
         expect(store.hasMorePages, isTrue);
         expect(store.errorMessage, isNull);
 
-        verify(() => mockRepository.getDestinationsPage(0)).called(1);
+        verify(() => mockGetPage(0)).called(1);
       },
     );
 
     test(
-      'Test 8: Verify searchWithAi action sets isSearchingWithAi, calls repo, and appends results properly',
+      'Test 8: Verify searchWithAi action sets isSearchingWithAi, calls use case, and appends results properly',
       () async {
         store.destinations.add(
-          Destination(
+          const DestinationDto(
             xid: 'existing',
             name: 'Managua',
             category: 'ciudad',
@@ -80,13 +89,13 @@ void main() {
 
         store.setSearchQuery('volcan');
 
-        final completer = Completer<List<Destination>>();
+        final completer = Completer<List<DestinationDto>>();
         when(
-          () => mockRepository.searchDestinations('volcan'),
+          () => mockSearch('volcan'),
         ).thenAnswer((_) => completer.future);
 
         final searchResults = [
-          Destination(
+          const DestinationDto(
             xid: 'search_volcan',
             name: 'Volcán Masaya',
             category: 'naturaleza',
@@ -110,7 +119,7 @@ void main() {
           isTrue,
         );
 
-        verify(() => mockRepository.searchDestinations('volcan')).called(1);
+        verify(() => mockSearch('volcan')).called(1);
       },
     );
   });
