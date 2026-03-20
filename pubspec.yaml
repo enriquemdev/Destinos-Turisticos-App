@@ -73,15 +73,15 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/icon/app_icon.png"
-  adaptive_icon_background: "#1565C0"
-  adaptive_icon_foreground: "assets/icon/app_icon.png"
+  adaptive_icon_background: "#00897B"
+  adaptive_icon_foreground: "assets/icon/app_icon.jpeg"
 
 flutter_native_splash:
-  color: "#1565C0"
-  image: "assets/icon/app_icon.png"
+  color: "#00897B"
+  image: "assets/icon/app_icon.jpeg"
   android_12:
-    color: "#1565C0"
-    image: "assets/icon/app_icon.png"
+    color: "#00897B"
+    image: "assets/icon/app_icon.jpeg"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
