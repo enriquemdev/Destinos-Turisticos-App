@@ -9,6 +9,13 @@ part of 'destination_store.dart';
 // ignore_for_file: non_constant_identifier_names, unnecessary_brace_in_string_interps, unnecessary_lambdas, prefer_expression_function_bodies, lines_longer_than_80_chars, avoid_as, avoid_annotating_with_dynamic, no_leading_underscores_for_local_identifiers
 
 mixin _$DestinationStore on DestinationStoreBase, Store {
+  Computed<bool>? _$isSearchActiveComputed;
+
+  @override
+  bool get isSearchActive => (_$isSearchActiveComputed ??= Computed<bool>(
+    () => super.isSearchActive,
+    name: 'DestinationStoreBase.isSearchActive',
+  )).value;
   Computed<List<Destination>>? _$displayedDestinationsComputed;
 
   @override
@@ -205,24 +212,6 @@ mixin _$DestinationStore on DestinationStoreBase, Store {
     });
   }
 
-  late final _$isSearchModeAtom = Atom(
-    name: 'DestinationStoreBase.isSearchMode',
-    context: context,
-  );
-
-  @override
-  bool get isSearchMode {
-    _$isSearchModeAtom.reportRead();
-    return super.isSearchMode;
-  }
-
-  @override
-  set isSearchMode(bool value) {
-    _$isSearchModeAtom.reportWrite(value, super.isSearchMode, () {
-      super.isSearchMode = value;
-    });
-  }
-
   late final _$isSearchingWithAiAtom = Atom(
     name: 'DestinationStoreBase.isSearchingWithAi',
     context: context,
@@ -238,60 +227,6 @@ mixin _$DestinationStore on DestinationStoreBase, Store {
   set isSearchingWithAi(bool value) {
     _$isSearchingWithAiAtom.reportWrite(value, super.isSearchingWithAi, () {
       super.isSearchingWithAi = value;
-    });
-  }
-
-  late final _$searchResultsAtom = Atom(
-    name: 'DestinationStoreBase.searchResults',
-    context: context,
-  );
-
-  @override
-  ObservableList<Destination> get searchResults {
-    _$searchResultsAtom.reportRead();
-    return super.searchResults;
-  }
-
-  @override
-  set searchResults(ObservableList<Destination> value) {
-    _$searchResultsAtom.reportWrite(value, super.searchResults, () {
-      super.searchResults = value;
-    });
-  }
-
-  late final _$aiTipsAtom = Atom(
-    name: 'DestinationStoreBase.aiTips',
-    context: context,
-  );
-
-  @override
-  String? get aiTips {
-    _$aiTipsAtom.reportRead();
-    return super.aiTips;
-  }
-
-  @override
-  set aiTips(String? value) {
-    _$aiTipsAtom.reportWrite(value, super.aiTips, () {
-      super.aiTips = value;
-    });
-  }
-
-  late final _$isLoadingTipsAtom = Atom(
-    name: 'DestinationStoreBase.isLoadingTips',
-    context: context,
-  );
-
-  @override
-  bool get isLoadingTips {
-    _$isLoadingTipsAtom.reportRead();
-    return super.isLoadingTips;
-  }
-
-  @override
-  set isLoadingTips(bool value) {
-    _$isLoadingTipsAtom.reportWrite(value, super.isLoadingTips, () {
-      super.isLoadingTips = value;
     });
   }
 
@@ -349,26 +284,14 @@ mixin _$DestinationStore on DestinationStoreBase, Store {
     );
   }
 
-  late final _$loadAiTipsAsyncAction = AsyncAction(
-    'DestinationStoreBase.loadAiTips',
+  late final _$searchWithAiAsyncAction = AsyncAction(
+    'DestinationStoreBase.searchWithAi',
     context: context,
   );
 
   @override
-  Future<void> loadAiTips() {
-    return _$loadAiTipsAsyncAction.run(() => super.loadAiTips());
-  }
-
-  late final _$searchDestinationsAsyncAction = AsyncAction(
-    'DestinationStoreBase.searchDestinations',
-    context: context,
-  );
-
-  @override
-  Future<void> searchDestinations() {
-    return _$searchDestinationsAsyncAction.run(
-      () => super.searchDestinations(),
-    );
+  Future<void> searchWithAi() {
+    return _$searchWithAiAsyncAction.run(() => super.searchWithAi());
   }
 
   late final _$DestinationStoreBaseActionController = ActionController(
@@ -401,12 +324,12 @@ mixin _$DestinationStore on DestinationStoreBase, Store {
   }
 
   @override
-  void exitSearchMode() {
+  void clearSearch() {
     final _$actionInfo = _$DestinationStoreBaseActionController.startAction(
-      name: 'DestinationStoreBase.exitSearchMode',
+      name: 'DestinationStoreBase.clearSearch',
     );
     try {
-      return super.exitSearchMode();
+      return super.clearSearch();
     } finally {
       _$DestinationStoreBaseActionController.endAction(_$actionInfo);
     }
@@ -437,11 +360,8 @@ selectedDestination: ${selectedDestination},
 nearbyPois: ${nearbyPois},
 isLoadingNearby: ${isLoadingNearby},
 searchQuery: ${searchQuery},
-isSearchMode: ${isSearchMode},
 isSearchingWithAi: ${isSearchingWithAi},
-searchResults: ${searchResults},
-aiTips: ${aiTips},
-isLoadingTips: ${isLoadingTips},
+isSearchActive: ${isSearchActive},
 displayedDestinations: ${displayedDestinations},
 hasError: ${hasError}
     ''';

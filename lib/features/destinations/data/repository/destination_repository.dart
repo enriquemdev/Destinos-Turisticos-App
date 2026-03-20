@@ -67,7 +67,6 @@ class DestinationRepository {
         longitude: dto.longitude,
         address: dto.address.isNotEmpty ? dto.address : null,
         highlight: dto.highlight.isNotEmpty ? dto.highlight : null,
-        aiTips: null,
         createdAt: now,
       );
     }).toList();
@@ -126,24 +125,6 @@ class DestinationRepository {
     return _local.getById(xid);
   }
 
-  // AI Tips
-
-  Future<String?> getAiTips(
-    String xid,
-    String name,
-    String category,
-  ) async {
-    final cached = await _local.getById(xid);
-    if (cached?.aiTips != null && cached!.aiTips!.isNotEmpty) {
-      return cached.aiTips;
-    }
-    if (!await _isOnline()) return null;
-
-    final tips = await _gemini.fetchAiTips(name, category);
-    await _local.updateAiTips(xid, tips);
-    return tips;
-  }
-
   // Nearby POIs — offline-first
 
   /// Returns nearby POIs for [destinationXid].
@@ -169,10 +150,10 @@ class DestinationRepository {
 
   // Search
 
+  /// Calls Gemini to find up to 5 destinations matching [query].
+  ///
+  /// Results are saved to SQLite and image enrichment fires for each new entry.
   Future<List<Destination>> searchDestinations(String query) async {
-    final localResults = await _local.search(query);
-    if (localResults.isNotEmpty) return localResults;
-
     if (!await _isOnline()) return [];
 
     final batch = await _gemini.searchDestinations(query);
@@ -186,13 +167,12 @@ class DestinationRepository {
         xid: xid,
         name: dto.name,
         description: dto.description.isNotEmpty ? dto.description : null,
-        imageUrl: null, // enriched via Wikidata
+        imageUrl: null,
         category: dto.category,
         latitude: dto.latitude,
         longitude: dto.longitude,
         address: dto.address.isNotEmpty ? dto.address : null,
         highlight: dto.highlight.isNotEmpty ? dto.highlight : null,
-        aiTips: null,
         createdAt: now,
       );
     }).toList();

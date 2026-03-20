@@ -17,7 +17,6 @@ abstract class Destination with _$Destination {
     required double longitude,
     String? address,
     String? highlight,
-    String? aiTips,
     int? createdAt,
   }) = _Destination;
 
@@ -34,7 +33,6 @@ abstract class Destination with _$Destination {
         'longitude': longitude,
         'address': address,
         'highlight': highlight,
-        'aiTips': aiTips,
         'createdAt': createdAt ?? DateTime.now().millisecondsSinceEpoch,
       };
 
@@ -48,7 +46,6 @@ abstract class Destination with _$Destination {
         longitude: (map['longitude'] as num).toDouble(),
         address: map['address'] as String?,
         highlight: map['highlight'] as String?,
-        aiTips: map['aiTips'] as String?,
         createdAt: map['createdAt'] as int?,
       );
 }

@@ -54,28 +54,26 @@ abstract class DestinationStoreBase with Store {
   String searchQuery = '';
 
   @observable
-  bool isSearchMode = false;
-
-  @observable
   bool isSearchingWithAi = false;
-
-  @observable
-  ObservableList<Destination> searchResults = ObservableList<Destination>();
-
-  // AI Tips
-
-  @observable
-  String? aiTips;
-
-  @observable
-  bool isLoadingTips = false;
 
   // Computed
 
   @computed
+  bool get isSearchActive => searchQuery.isNotEmpty;
+
+  /// Returns destinations filtered by [searchQuery] (name or description),
+  /// or the full list when no query is active.
+  @computed
   List<Destination> get displayedDestinations {
-    if (isSearchMode) return searchResults.toList();
-    return destinations.toList();
+    if (searchQuery.isEmpty) return destinations.toList();
+    final q = searchQuery.toLowerCase();
+    return destinations
+        .where(
+          (d) =>
+              d.name.toLowerCase().contains(q) ||
+              (d.description?.toLowerCase().contains(q) ?? false),
+        )
+        .toList();
   }
 
   @computed
@@ -110,7 +108,8 @@ abstract class DestinationStoreBase with Store {
 
   @action
   Future<void> fetchMoreItems() async {
-    if (isLoadingMore || !hasMorePages || isSearchMode) return;
+    // Disable pagination while searching
+    if (isLoadingMore || !hasMorePages || isSearchActive) return;
 
     runInAction(() => isLoadingMore = true);
 
@@ -142,9 +141,7 @@ abstract class DestinationStoreBase with Store {
     runInAction(() {
       isLoading = true;
       errorMessage = null;
-      isSearchMode = false;
       searchQuery = '';
-      searchResults.clear();
     });
     try {
       await _repository.refresh();
@@ -171,14 +168,12 @@ abstract class DestinationStoreBase with Store {
       isLoading = true;
       errorMessage = null;
       selectedDestination = null;
-      aiTips = null;
       nearbyPois.clear();
     });
     try {
       final destination = await _repository.getDestinationById(xid);
       runInAction(() {
         selectedDestination = destination;
-        aiTips = destination?.aiTips;
         isLoading = false;
       });
     } catch (e) {
@@ -192,8 +187,6 @@ abstract class DestinationStoreBase with Store {
   @action
   void clearSelectedDestination() {
     selectedDestination = null;
-    aiTips = null;
-    isLoadingTips = false;
     nearbyPois.clear();
     isLoadingNearby = false;
   }
@@ -222,88 +215,54 @@ abstract class DestinationStoreBase with Store {
     }
   }
 
-  // Actions: AI Tips
-
-  @action
-  Future<void> loadAiTips() async {
-    final dest = selectedDestination;
-    if (dest == null || isLoadingTips) return;
-
-    runInAction(() {
-      isLoadingTips = true;
-      aiTips = null;
-    });
-    try {
-      final tips = await _repository.getAiTips(dest.xid, dest.name, dest.category);
-      runInAction(() {
-        aiTips = tips;
-        if (tips != null) {
-          selectedDestination = dest.copyWith(aiTips: tips);
-        }
-        isLoadingTips = false;
-      });
-    } catch (e) {
-      runInAction(() => isLoadingTips = false);
-    }
-  }
-
   // Actions: Search
 
   @action
   void setSearchQuery(String query) {
     searchQuery = query;
-    if (query.trim().isEmpty) exitSearchMode();
   }
 
   @action
-  Future<void> searchDestinations() async {
-    final query = searchQuery.trim();
-    if (query.isEmpty) return;
+  void clearSearch() {
+    searchQuery = '';
+  }
 
-    runInAction(() {
-      isSearchMode = true;
-      isSearchingWithAi = true;
-      errorMessage = null;
-      searchResults.clear();
-    });
+  /// Calls Gemini to search for up to 5 destinations matching [searchQuery].
+  ///
+  /// Inserts results into [destinations] (deduped by xid) so the existing
+  /// image enrichment callback also covers newly found places.
+  @action
+  Future<void> searchWithAi() async {
+    final query = searchQuery.trim();
+    if (query.isEmpty || isSearchingWithAi) return;
+
+    runInAction(() => isSearchingWithAi = true);
 
     try {
       final results = await _repository.searchDestinations(query);
       runInAction(() {
-        searchResults = ObservableList<Destination>.of(results);
+        for (final result in results) {
+          final existingIdx = destinations.indexWhere((d) => d.xid == result.xid);
+          if (existingIdx != -1) {
+            destinations[existingIdx] = result;
+          } else {
+            destinations.add(result);
+          }
+        }
         isSearchingWithAi = false;
       });
     } catch (e) {
-      runInAction(() {
-        errorMessage = e.toString();
-        isSearchingWithAi = false;
-      });
+      runInAction(() => isSearchingWithAi = false);
     }
-  }
-
-  @action
-  void exitSearchMode() {
-    isSearchMode = false;
-    searchResults.clear();
-    searchQuery = '';
   }
 
   // Actions: Background Image Enrichment
 
   @action
   void updateDestinationImage(String xid, String imageUrl) {
-    _updateImageInList(destinations, xid, imageUrl);
-    _updateImageInList(searchResults, xid, imageUrl);
-  }
-
-  void _updateImageInList(
-    ObservableList<Destination> list,
-    String xid,
-    String imageUrl,
-  ) {
-    final idx = list.indexWhere((d) => d.xid == xid);
+    final idx = destinations.indexWhere((d) => d.xid == xid);
     if (idx != -1) {
-      list[idx] = list[idx].copyWith(imageUrl: imageUrl);
+      destinations[idx] = destinations[idx].copyWith(imageUrl: imageUrl);
     }
   }
 }

@@ -68,24 +68,22 @@ Responde ÚNICAMENTE con el JSON array. Sin markdown, sin explicación.
     return _parseBatch(raw);
   }
 
-  /// Generates 3 travel tips for [destinationName].
-  Future<String> fetchAiTips(String destinationName, String category) async {
-    final prompt = '''
-Escribe 3 consejos de viaje en español para visitar "$destinationName" ($category) en Nicaragua.
-Formato: lista numerada. Cada consejo máximo 2 oraciones. Sé práctico y específico.
-Responde ÚNICAMENTE con la lista numerada. Sin introducción, sin markdown.
-''';
-    return _callGemini(prompt);
-  }
-
+  /// Searches for up to 5 Nicaragua tourist destinations matching [query].
   Future<List<GeminiDestinationDto>> searchDestinations(String query) async {
     final prompt = '''
-Busca hasta 5 destinos turísticos de Nicaragua que coincidan con: "$query".
+Eres un experto en turismo de Nicaragua.
+Busca EXACTAMENTE hasta 5 destinos turísticos de Nicaragua relacionados con: "$query".
 
-Cada objeto DEBE tener EXACTAMENTE estos campos:
-  "name", "description", "category", "highlight", "latitude", "longitude", "address"
+Cada objeto DEBE tener EXACTAMENTE estos campos (sin extras):
+  "name": string (nombre oficial del lugar en español),
+  "description": string (descripción atractiva en español, 2-3 oraciones),
+  "category": string (uno de: naturaleza, cultura, historia, playa, aventura, gastronomia, ciudad),
+  "highlight": string (una oración impactante en español, máximo 15 palabras),
+  "latitude": number (coordenadas GPS precisas),
+  "longitude": number,
+  "address": string (dirección legible, ciudad o departamento en Nicaragua)
 
-Respende ÚNICAMENTE con el JSON array. Array vacío [] si no hay resultados.
+Responde ÚNICAMENTE con el JSON array (máximo 5 elementos). Array vacío [] si no hay resultados. Sin markdown, sin explicación.
 ''';
     final raw = await _callGemini(prompt);
     return _parseBatch(raw);

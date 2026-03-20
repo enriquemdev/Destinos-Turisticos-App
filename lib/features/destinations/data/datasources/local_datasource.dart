@@ -34,10 +34,32 @@ class DatabaseHelper {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    await db.execute('DROP TABLE IF EXISTS $tableDestinations');
-    await db.execute('DROP TABLE IF EXISTS $tableNearbyPois');
-    await _createDestinationsTable(db);
-    await _createNearbyPoisTable(db);
+    if (oldVersion < 5) {
+      // aiTips column removed — rebuild destinations table without it.
+      // SQLite doesn't support DROP COLUMN before 3.35; recreate instead.
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS ${tableDestinations}_new (
+          xid        TEXT    PRIMARY KEY,
+          name       TEXT    NOT NULL,
+          description TEXT,
+          imageUrl   TEXT,
+          category   TEXT    NOT NULL,
+          latitude   REAL    NOT NULL,
+          longitude  REAL    NOT NULL,
+          address    TEXT,
+          highlight  TEXT,
+          createdAt  INTEGER NOT NULL DEFAULT 0
+        )
+      ''');
+      await db.execute('''
+        INSERT INTO ${tableDestinations}_new
+          (xid, name, description, imageUrl, category, latitude, longitude, address, highlight, createdAt)
+        SELECT xid, name, description, imageUrl, category, latitude, longitude, address, highlight, createdAt
+        FROM $tableDestinations
+      ''');
+      await db.execute('DROP TABLE $tableDestinations');
+      await db.execute('ALTER TABLE ${tableDestinations}_new RENAME TO $tableDestinations');
+    }
   }
 
   Future<void> _createDestinationsTable(Database database) async {
@@ -52,7 +74,6 @@ class DatabaseHelper {
         longitude  REAL    NOT NULL,
         address    TEXT,
         highlight  TEXT,
-        aiTips     TEXT,
         createdAt  INTEGER NOT NULL DEFAULT 0
       )
     ''');
@@ -91,15 +112,6 @@ class DatabaseHelper {
     await batch.commit(noResult: true);
   }
 
-  Future<void> updateAiTips(String xid, String tips) async {
-    final database = await db;
-    await database.update(
-      tableDestinations,
-      {'aiTips': tips},
-      where: 'xid = ?',
-      whereArgs: [xid],
-    );
-  }
 
   Future<void> updateImageUrl(String xid, String url) async {
     final database = await db;
@@ -158,8 +170,8 @@ class DatabaseHelper {
     final like = '%$query%';
     final rows = await database.query(
       tableDestinations,
-      where: 'name LIKE ? OR category LIKE ? OR address LIKE ?',
-      whereArgs: [like, like, like],
+      where: 'name LIKE ? OR description LIKE ?',
+      whereArgs: [like, like],
       orderBy: 'createdAt DESC',
     );
     return rows.map(Destination.fromMap).toList();

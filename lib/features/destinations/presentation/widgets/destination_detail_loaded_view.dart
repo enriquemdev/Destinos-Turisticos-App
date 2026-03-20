@@ -23,7 +23,6 @@ class DestinationDetailLoadedView extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
 
     final address = destination.address?.trim();
     final desc = destination.description?.trim();
@@ -87,14 +86,6 @@ class DestinationDetailLoadedView extends StatelessWidget {
             ),
           ],
 
-          // AI Tips
-          const SizedBox(height: 28),
-          _AiTipsSection(
-            store: store,
-            scheme: scheme,
-            isDark: isDark,
-          ),
-
           // Map
           const SizedBox(height: 28),
           _SectionTitle(title: 'Ubicación', scheme: scheme),
@@ -117,120 +108,6 @@ class DestinationDetailLoadedView extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-// AI Tips section
-
-class _AiTipsSection extends StatelessWidget {
-  const _AiTipsSection({
-    required this.store,
-    required this.scheme,
-    required this.isDark,
-  });
-
-  final DestinationStore store;
-  final ColorScheme scheme;
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    return Observer(
-      builder: (_) {
-        final tips = store.aiTips;
-        final isLoading = store.isLoadingTips;
-
-        return Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: isDark
-                ? scheme.primary.withAlpha(30)
-                : scheme.primary.withAlpha(15),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: scheme.primary.withAlpha(60),
-              width: 1.5,
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Text('✨', style: TextStyle(fontSize: 20)),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Tips de viaje con IA',
-                    style: GoogleFonts.outfit(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: scheme.primary,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              if (tips != null && tips.isNotEmpty)
-                Text(
-                  tips,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: scheme.onSurface.withAlpha(200),
-                    height: 1.6,
-                  ),
-                )
-              else if (isLoading)
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: scheme.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Generando con Gemini…',
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        color: scheme.onSurface.withAlpha(150),
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ],
-                )
-              else ...[
-                Text(
-                  'Genera consejos personalizados para este destino.',
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: scheme.onSurface.withAlpha(150),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                FilledButton.icon(
-                  onPressed: store.loadAiTips,
-                  icon: const Icon(Icons.auto_awesome_rounded, size: 18),
-                  label: Text(
-                    'Generar tips',
-                    style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
-                  ),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: scheme.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        );
-      },
     );
   }
 }

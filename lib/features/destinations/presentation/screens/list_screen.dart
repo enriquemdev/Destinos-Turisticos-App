@@ -57,15 +57,63 @@ class _ListScreenState extends State<ListScreen> {
     super.dispose();
   }
 
-  Future<void> _onRefresh() => _store.refresh();
+  Future<void> _onRefresh() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        final scheme = Theme.of(ctx).colorScheme;
+        return AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              Icon(Icons.refresh_rounded, color: scheme.primary),
+              const SizedBox(width: 10),
+              Text(
+                'Recargar datos',
+                style: GoogleFonts.outfit(fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+          content: Text(
+            '¿Deseas borrar los destinos guardados y comenzar desde cero? '
+            'Se descargarán destinos nuevos si hay conexión.',
+            style: GoogleFonts.inter(fontSize: 14, height: 1.5),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(
+                'Cancelar',
+                style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+              ),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: scheme.error,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text(
+                'Borrar y recargar',
+                style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        );
+      },
+    );
 
-  void _onSearchSubmitted() {
-    final q = _searchController.text.trim();
-    if (q.isEmpty) {
-      _store.exitSearchMode();
-    } else {
-      _store.searchDestinations();
+    if (confirmed == true) {
+      await _store.refresh();
     }
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    _store.clearSearch();
   }
 
   @override
@@ -78,7 +126,7 @@ class _ListScreenState extends State<ListScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Header ──────────────────────────────────────────────────────
+            // ── Header ────────────────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
               child: Column(
@@ -107,71 +155,83 @@ class _ListScreenState extends State<ListScreen> {
               ),
             ),
 
-            // ── Search bar ───────────────────────────────────────────────────
+            // ── Search bar ────────────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Observer(
-                      builder: (_) => TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText: 'Buscar destinos…',
-                          hintStyle: GoogleFonts.inter(
-                            fontSize: 14,
-                            color: scheme.onSurface.withAlpha(100),
-                          ),
-                          prefixIcon: Icon(
-                            Icons.search_rounded,
-                            color: scheme.onSurface.withAlpha(130),
-                          ),
-                          suffixIcon: _store.searchQuery.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(Icons.close_rounded),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    _store.exitSearchMode();
-                                  },
-                                )
-                              : null,
-                        ),
-                        textInputAction: TextInputAction.search,
-                        onSubmitted: (_) => _onSearchSubmitted(),
-                      ),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+              child: Observer(
+                builder: (_) => TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Buscar destinos…',
+                    hintStyle: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: scheme.onSurface.withAlpha(100),
                     ),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      color: scheme.onSurface.withAlpha(130),
+                    ),
+                    suffixIcon: _store.isSearchActive
+                        ? IconButton(
+                            icon: const Icon(Icons.close_rounded),
+                            onPressed: _clearSearch,
+                          )
+                        : null,
                   ),
-                ],
+                  textInputAction: TextInputAction.search,
+                ),
               ),
             ),
 
-            // Body
+            // ── AI search button (visible when query is non-empty) ────────────
+            Observer(
+              builder: (_) {
+                if (!_store.isSearchActive) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed:
+                          _store.isSearchingWithAi ? null : _store.searchWithAi,
+                      icon: _store.isSearchingWithAi
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.auto_awesome_rounded, size: 18),
+                      label: Text(
+                        _store.isSearchingWithAi
+                            ? 'Buscando con IA…'
+                            : 'Buscar con IA',
+                        style:
+                            GoogleFonts.outfit(fontWeight: FontWeight.w600),
+                      ),
+                      style: FilledButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+
+            const SizedBox(height: 12),
+
+            // ── Body ──────────────────────────────────────────────────────────
             Expanded(
               child: Observer(
                 builder: (_) => _buildBody(context),
               ),
             ),
           ],
-        ),
-      ),
-      // AI Discover FAB
-      floatingActionButton: Observer(
-        builder: (_) => FloatingActionButton.extended(
-          onPressed: _store.isSearchingWithAi ? null : _onSearchSubmitted,
-          icon: _store.isSearchingWithAi
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : const Icon(Icons.auto_awesome_rounded),
-          label: Text(
-            _store.isSearchingWithAi ? 'Buscando…' : 'Descubrir con IA',
-            style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
-          ),
         ),
       ),
     );
@@ -186,6 +246,11 @@ class _ListScreenState extends State<ListScreen> {
       return const DestinationListSkeleton();
     }
 
+    // Gemini search loading
+    if (_store.isSearchingWithAi) {
+      return const DestinationListSkeleton(count: 3);
+    }
+
     // Error
     if (_store.errorMessage != null && _store.destinations.isEmpty) {
       return _ErrorState(
@@ -196,19 +261,15 @@ class _ListScreenState extends State<ListScreen> {
       );
     }
 
-    // Empty state
+    // Empty (no data yet)
     if (_store.destinations.isEmpty && !_store.isLoading) {
       return _EmptyState(scheme: scheme, theme: theme);
     }
 
-    // AI search loading
-    if (_store.isSearchingWithAi) {
-      return const DestinationListSkeleton(count: 3);
-    }
-
-    // Search empty
     final items = _store.displayedDestinations;
-    if (items.isEmpty && _store.isSearchMode) {
+
+    // No local results for query
+    if (items.isEmpty && _store.isSearchActive) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -217,9 +278,17 @@ class _ListScreenState extends State<ListScreen> {
                 size: 56, color: scheme.onSurface.withAlpha(60)),
             const SizedBox(height: 16),
             Text(
-              'Sin resultados para "${_store.searchQuery}"',
+              'No hay resultados locales para\n"${_store.searchQuery}"',
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: scheme.onSurface.withAlpha(100),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Prueba con "Buscar con IA" para\nencontrar más destinos.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: scheme.onSurface.withAlpha(70),
               ),
               textAlign: TextAlign.center,
             ),
@@ -228,6 +297,7 @@ class _ListScreenState extends State<ListScreen> {
       );
     }
 
+    // Show total count hint when filtering
     return RefreshIndicator(
       onRefresh: _onRefresh,
       color: scheme.primary,
@@ -236,10 +306,11 @@ class _ListScreenState extends State<ListScreen> {
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-          itemCount: items.length + (_store.hasMorePages && !_store.isSearchMode ? 1 : 0),
+          itemCount: items.length +
+              (!_store.isSearchActive && _store.hasMorePages ? 1 : 0),
           separatorBuilder: (context, index) => const SizedBox(height: 16),
           itemBuilder: (context, index) {
-            // Loading more indicator at the end
+            // Loading more indicator at the end (only in non-search mode)
             if (index == items.length) {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 24),
