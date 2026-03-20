@@ -20,6 +20,8 @@ abstract class Destination with _$Destination {
     String? wikipedia,
     String? osm,
     double? rate,
+    String? highlight,
+    String? aiTips,
   }) = _Destination;
 
   factory Destination.fromJson(Map<String, dynamic> json) =>
@@ -38,6 +40,8 @@ abstract class Destination with _$Destination {
         'wikipedia': wikipedia,
         'osm': osm,
         'rate': rate,
+        'highlight': highlight,
+        'aiTips': aiTips,
       };
 
   factory Destination.fromMap(Map<String, dynamic> map) => Destination(
@@ -53,5 +57,7 @@ abstract class Destination with _$Destination {
         wikipedia: map['wikipedia'] as String?,
         osm: map['osm'] as String?,
         rate: map['rate'] as double?,
+        highlight: map['highlight'] as String?,
+        aiTips: map['aiTips'] as String?,
       );
 }

@@ -9,14 +9,21 @@ part of 'destination_store.dart';
 // ignore_for_file: non_constant_identifier_names, unnecessary_brace_in_string_interps, unnecessary_lambdas, prefer_expression_function_bodies, lines_longer_than_80_chars, avoid_as, avoid_annotating_with_dynamic, no_leading_underscores_for_local_identifiers
 
 mixin _$DestinationStore on DestinationStoreBase, Store {
-  Computed<List<Destination>>? _$filteredDestinationsComputed;
+  Computed<List<Destination>>? _$displayedDestinationsComputed;
 
   @override
-  List<Destination> get filteredDestinations =>
-      (_$filteredDestinationsComputed ??= Computed<List<Destination>>(
-        () => super.filteredDestinations,
-        name: 'DestinationStoreBase.filteredDestinations',
+  List<Destination> get displayedDestinations =>
+      (_$displayedDestinationsComputed ??= Computed<List<Destination>>(
+        () => super.displayedDestinations,
+        name: 'DestinationStoreBase.displayedDestinations',
       )).value;
+  Computed<bool>? _$hasErrorComputed;
+
+  @override
+  bool get hasError => (_$hasErrorComputed ??= Computed<bool>(
+    () => super.hasError,
+    name: 'DestinationStoreBase.hasError',
+  )).value;
 
   late final _$destinationsAtom = Atom(
     name: 'DestinationStoreBase.destinations',
@@ -33,24 +40,6 @@ mixin _$DestinationStore on DestinationStoreBase, Store {
   set destinations(ObservableList<Destination> value) {
     _$destinationsAtom.reportWrite(value, super.destinations, () {
       super.destinations = value;
-    });
-  }
-
-  late final _$selectedDestinationAtom = Atom(
-    name: 'DestinationStoreBase.selectedDestination',
-    context: context,
-  );
-
-  @override
-  Destination? get selectedDestination {
-    _$selectedDestinationAtom.reportRead();
-    return super.selectedDestination;
-  }
-
-  @override
-  set selectedDestination(Destination? value) {
-    _$selectedDestinationAtom.reportWrite(value, super.selectedDestination, () {
-      super.selectedDestination = value;
     });
   }
 
@@ -72,6 +61,60 @@ mixin _$DestinationStore on DestinationStoreBase, Store {
     });
   }
 
+  late final _$isLoadingMoreAtom = Atom(
+    name: 'DestinationStoreBase.isLoadingMore',
+    context: context,
+  );
+
+  @override
+  bool get isLoadingMore {
+    _$isLoadingMoreAtom.reportRead();
+    return super.isLoadingMore;
+  }
+
+  @override
+  set isLoadingMore(bool value) {
+    _$isLoadingMoreAtom.reportWrite(value, super.isLoadingMore, () {
+      super.isLoadingMore = value;
+    });
+  }
+
+  late final _$hasMorePagesAtom = Atom(
+    name: 'DestinationStoreBase.hasMorePages',
+    context: context,
+  );
+
+  @override
+  bool get hasMorePages {
+    _$hasMorePagesAtom.reportRead();
+    return super.hasMorePages;
+  }
+
+  @override
+  set hasMorePages(bool value) {
+    _$hasMorePagesAtom.reportWrite(value, super.hasMorePages, () {
+      super.hasMorePages = value;
+    });
+  }
+
+  late final _$currentPageAtom = Atom(
+    name: 'DestinationStoreBase.currentPage',
+    context: context,
+  );
+
+  @override
+  int get currentPage {
+    _$currentPageAtom.reportRead();
+    return super.currentPage;
+  }
+
+  @override
+  set currentPage(int value) {
+    _$currentPageAtom.reportWrite(value, super.currentPage, () {
+      super.currentPage = value;
+    });
+  }
+
   late final _$errorMessageAtom = Atom(
     name: 'DestinationStoreBase.errorMessage',
     context: context,
@@ -87,6 +130,24 @@ mixin _$DestinationStore on DestinationStoreBase, Store {
   set errorMessage(String? value) {
     _$errorMessageAtom.reportWrite(value, super.errorMessage, () {
       super.errorMessage = value;
+    });
+  }
+
+  late final _$selectedDestinationAtom = Atom(
+    name: 'DestinationStoreBase.selectedDestination',
+    context: context,
+  );
+
+  @override
+  Destination? get selectedDestination {
+    _$selectedDestinationAtom.reportRead();
+    return super.selectedDestination;
+  }
+
+  @override
+  set selectedDestination(Destination? value) {
+    _$selectedDestinationAtom.reportWrite(value, super.selectedDestination, () {
+      super.selectedDestination = value;
     });
   }
 
@@ -108,6 +169,96 @@ mixin _$DestinationStore on DestinationStoreBase, Store {
     });
   }
 
+  late final _$isSearchModeAtom = Atom(
+    name: 'DestinationStoreBase.isSearchMode',
+    context: context,
+  );
+
+  @override
+  bool get isSearchMode {
+    _$isSearchModeAtom.reportRead();
+    return super.isSearchMode;
+  }
+
+  @override
+  set isSearchMode(bool value) {
+    _$isSearchModeAtom.reportWrite(value, super.isSearchMode, () {
+      super.isSearchMode = value;
+    });
+  }
+
+  late final _$isSearchingWithAiAtom = Atom(
+    name: 'DestinationStoreBase.isSearchingWithAi',
+    context: context,
+  );
+
+  @override
+  bool get isSearchingWithAi {
+    _$isSearchingWithAiAtom.reportRead();
+    return super.isSearchingWithAi;
+  }
+
+  @override
+  set isSearchingWithAi(bool value) {
+    _$isSearchingWithAiAtom.reportWrite(value, super.isSearchingWithAi, () {
+      super.isSearchingWithAi = value;
+    });
+  }
+
+  late final _$searchResultsAtom = Atom(
+    name: 'DestinationStoreBase.searchResults',
+    context: context,
+  );
+
+  @override
+  ObservableList<Destination> get searchResults {
+    _$searchResultsAtom.reportRead();
+    return super.searchResults;
+  }
+
+  @override
+  set searchResults(ObservableList<Destination> value) {
+    _$searchResultsAtom.reportWrite(value, super.searchResults, () {
+      super.searchResults = value;
+    });
+  }
+
+  late final _$aiTipsAtom = Atom(
+    name: 'DestinationStoreBase.aiTips',
+    context: context,
+  );
+
+  @override
+  String? get aiTips {
+    _$aiTipsAtom.reportRead();
+    return super.aiTips;
+  }
+
+  @override
+  set aiTips(String? value) {
+    _$aiTipsAtom.reportWrite(value, super.aiTips, () {
+      super.aiTips = value;
+    });
+  }
+
+  late final _$isLoadingTipsAtom = Atom(
+    name: 'DestinationStoreBase.isLoadingTips',
+    context: context,
+  );
+
+  @override
+  bool get isLoadingTips {
+    _$isLoadingTipsAtom.reportRead();
+    return super.isLoadingTips;
+  }
+
+  @override
+  set isLoadingTips(bool value) {
+    _$isLoadingTipsAtom.reportWrite(value, super.isLoadingTips, () {
+      super.isLoadingTips = value;
+    });
+  }
+
   late final _$loadDestinationsAsyncAction = AsyncAction(
     'DestinationStoreBase.loadDestinations',
     context: context,
@@ -116,6 +267,26 @@ mixin _$DestinationStore on DestinationStoreBase, Store {
   @override
   Future<void> loadDestinations() {
     return _$loadDestinationsAsyncAction.run(() => super.loadDestinations());
+  }
+
+  late final _$fetchMoreItemsAsyncAction = AsyncAction(
+    'DestinationStoreBase.fetchMoreItems',
+    context: context,
+  );
+
+  @override
+  Future<void> fetchMoreItems() {
+    return _$fetchMoreItemsAsyncAction.run(() => super.fetchMoreItems());
+  }
+
+  late final _$refreshAsyncAction = AsyncAction(
+    'DestinationStoreBase.refresh',
+    context: context,
+  );
+
+  @override
+  Future<void> refresh() {
+    return _$refreshAsyncAction.run(() => super.refresh());
   }
 
   late final _$loadDestinationByIdAsyncAction = AsyncAction(
@@ -130,32 +301,32 @@ mixin _$DestinationStore on DestinationStoreBase, Store {
     );
   }
 
-  late final _$refreshAsyncAction = AsyncAction(
-    'DestinationStoreBase.refresh',
+  late final _$loadAiTipsAsyncAction = AsyncAction(
+    'DestinationStoreBase.loadAiTips',
     context: context,
   );
 
   @override
-  Future<void> refresh() {
-    return _$refreshAsyncAction.run(() => super.refresh());
+  Future<void> loadAiTips() {
+    return _$loadAiTipsAsyncAction.run(() => super.loadAiTips());
+  }
+
+  late final _$searchDestinationsAsyncAction = AsyncAction(
+    'DestinationStoreBase.searchDestinations',
+    context: context,
+  );
+
+  @override
+  Future<void> searchDestinations() {
+    return _$searchDestinationsAsyncAction.run(
+      () => super.searchDestinations(),
+    );
   }
 
   late final _$DestinationStoreBaseActionController = ActionController(
     name: 'DestinationStoreBase',
     context: context,
   );
-
-  @override
-  void setSearchQuery(String query) {
-    final _$actionInfo = _$DestinationStoreBaseActionController.startAction(
-      name: 'DestinationStoreBase.setSearchQuery',
-    );
-    try {
-      return super.setSearchQuery(query);
-    } finally {
-      _$DestinationStoreBaseActionController.endAction(_$actionInfo);
-    }
-  }
 
   @override
   void clearSelectedDestination() {
@@ -170,14 +341,47 @@ mixin _$DestinationStore on DestinationStoreBase, Store {
   }
 
   @override
+  void setSearchQuery(String query) {
+    final _$actionInfo = _$DestinationStoreBaseActionController.startAction(
+      name: 'DestinationStoreBase.setSearchQuery',
+    );
+    try {
+      return super.setSearchQuery(query);
+    } finally {
+      _$DestinationStoreBaseActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
+  void exitSearchMode() {
+    final _$actionInfo = _$DestinationStoreBaseActionController.startAction(
+      name: 'DestinationStoreBase.exitSearchMode',
+    );
+    try {
+      return super.exitSearchMode();
+    } finally {
+      _$DestinationStoreBaseActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
   String toString() {
     return '''
 destinations: ${destinations},
-selectedDestination: ${selectedDestination},
 isLoading: ${isLoading},
+isLoadingMore: ${isLoadingMore},
+hasMorePages: ${hasMorePages},
+currentPage: ${currentPage},
 errorMessage: ${errorMessage},
+selectedDestination: ${selectedDestination},
 searchQuery: ${searchQuery},
-filteredDestinations: ${filteredDestinations}
+isSearchMode: ${isSearchMode},
+isSearchingWithAi: ${isSearchingWithAi},
+searchResults: ${searchResults},
+aiTips: ${aiTips},
+isLoadingTips: ${isLoadingTips},
+displayedDestinations: ${displayedDestinations},
+hasError: ${hasError}
     ''';
   }
 }

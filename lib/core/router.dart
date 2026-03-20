@@ -18,14 +18,16 @@ final GoRouter appRouter = GoRouter(
       name: RouteNames.list,
       builder: (BuildContext context, GoRouterState state) =>
           const ListScreen(),
-    ),
-    GoRoute(
-      path: '/detail/:xid',
-      name: RouteNames.detail,
-      builder: (BuildContext context, GoRouterState state) {
-        final xid = state.pathParameters['xid'] ?? '';
-        return DetailScreen(xid: xid);
-      },
+      routes: <RouteBase>[
+        GoRoute(
+          path: 'detail/:xid',
+          name: RouteNames.detail,
+          builder: (BuildContext context, GoRouterState state) {
+            final xid = state.pathParameters['xid'] ?? '';
+            return DetailScreen(xid: xid);
+          },
+        ),
+      ],
     ),
   ],
 );

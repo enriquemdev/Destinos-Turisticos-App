@@ -19,6 +19,8 @@ _Destination _$DestinationFromJson(Map<String, dynamic> json) => _Destination(
   wikipedia: json['wikipedia'] as String?,
   osm: json['osm'] as String?,
   rate: (json['rate'] as num?)?.toDouble(),
+  highlight: json['highlight'] as String?,
+  aiTips: json['aiTips'] as String?,
 );
 
 Map<String, dynamic> _$DestinationToJson(_Destination instance) =>
@@ -35,4 +37,6 @@ Map<String, dynamic> _$DestinationToJson(_Destination instance) =>
       'wikipedia': instance.wikipedia,
       'osm': instance.osm,
       'rate': instance.rate,
+      'highlight': instance.highlight,
+      'aiTips': instance.aiTips,
     };

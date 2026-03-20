@@ -23,10 +23,21 @@ class DatabaseHelper {
       path,
       version: dbVersion,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
   Future<void> _onCreate(Database database, int version) async {
+    await _createTable(database);
+  }
+
+  Future<void> _onUpgrade(Database database, int oldVersion, int newVersion) async {
+    // Clean migration: drop and recreate
+    await database.execute('DROP TABLE IF EXISTS $tableDestinations');
+    await _createTable(database);
+  }
+
+  Future<void> _createTable(Database database) async {
     await database.execute('''
       CREATE TABLE $tableDestinations (
         xid TEXT PRIMARY KEY,
@@ -40,10 +51,14 @@ class DatabaseHelper {
         url TEXT,
         wikipedia TEXT,
         osm TEXT,
-        rate REAL
+        rate REAL,
+        highlight TEXT,
+        aiTips TEXT
       )
     ''');
   }
+
+  // ── Write ───────────────────────────────────────────────────────────────────
 
   Future<void> insertAll(List<Destination> destinations) async {
     final database = await db;
@@ -58,10 +73,48 @@ class DatabaseHelper {
     await batch.commit(noResult: true);
   }
 
+  Future<void> updateAiTips(String xid, String tips) async {
+    final database = await db;
+    await database.update(
+      tableDestinations,
+      {'aiTips': tips},
+      where: 'xid = ?',
+      whereArgs: [xid],
+    );
+  }
+
+  Future<void> deleteAll() async {
+    final database = await db;
+    await database.delete(tableDestinations);
+  }
+
+  // ── Read ────────────────────────────────────────────────────────────────────
+
   Future<List<Destination>> getAll() async {
     final database = await db;
-    final rows = await database.query(tableDestinations);
-    return rows.map((row) => _rowToDestination(row)).toList();
+    final rows = await database.query(tableDestinations, orderBy: 'name ASC');
+    return rows.map(_rowToDestination).toList();
+  }
+
+  /// Returns a single page of [pageSize] destinations, ordered by name.
+  Future<List<Destination>> getPage(int limit, int offset) async {
+    final database = await db;
+    final rows = await database.query(
+      tableDestinations,
+      orderBy: 'name ASC',
+      limit: limit,
+      offset: offset,
+    );
+    return rows.map(_rowToDestination).toList();
+  }
+
+  /// Total number of stored destinations.
+  Future<int> getCount() async {
+    final database = await db;
+    final result = await database.rawQuery(
+      'SELECT COUNT(*) as count FROM $tableDestinations',
+    );
+    return (result.first['count'] as int?) ?? 0;
   }
 
   Future<Destination?> getById(String xid) async {
@@ -75,10 +128,20 @@ class DatabaseHelper {
     return _rowToDestination(rows.first);
   }
 
-  Future<void> deleteAll() async {
+  /// Local keyword search using LIKE on name and category.
+  Future<List<Destination>> search(String query) async {
     final database = await db;
-    await database.delete(tableDestinations);
+    final like = '%$query%';
+    final rows = await database.query(
+      tableDestinations,
+      where: 'name LIKE ? OR category LIKE ?',
+      whereArgs: [like, like],
+      orderBy: 'name ASC',
+    );
+    return rows.map(_rowToDestination).toList();
   }
+
+  // ── Helpers ─────────────────────────────────────────────────────────────────
 
   Destination _rowToDestination(Map<String, dynamic> row) {
     return Destination.fromMap(_sanitizeRow(row));
@@ -86,7 +149,8 @@ class DatabaseHelper {
 
   Map<String, dynamic> _sanitizeRow(Map<String, dynamic> row) {
     return row.map((key, value) {
-      if (value is num && (key == 'latitude' || key == 'longitude' || key == 'rate')) {
+      if (value is num &&
+          (key == 'latitude' || key == 'longitude' || key == 'rate')) {
         return MapEntry(key, value.toDouble());
       }
       return MapEntry(key, value);

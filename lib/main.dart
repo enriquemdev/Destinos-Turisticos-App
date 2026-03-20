@@ -16,7 +16,7 @@ Future<void> main() async {
   runApp(const App());
 }
 
-/// Root widget: Material 3 theme, GoRouter, and global offline indicator.
+/// Root widget: Material 3 theme with dark mode support, GoRouter, offline indicator.
 class App extends StatelessWidget {
   const App({super.key});
 
@@ -24,8 +24,10 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      title: 'Destinos turísticos',
+      title: 'Destinos Turísticos Nicaragua',
       theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: ThemeMode.system,
       routerConfig: appRouter,
       builder: (BuildContext context, Widget? child) {
         return OfflineBanner(child: child ?? const SizedBox.shrink());

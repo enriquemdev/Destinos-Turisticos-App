@@ -14,51 +14,102 @@ class RemoteDataSourceException implements Exception {
 }
 
 /// Fetches destination data from OpenTripMap API.
+/// Coordinates can be passed in to support Gemini-driven destination discovery.
 class DestinationsRemoteDataSource {
   DestinationsRemoteDataSource({Dio? dio})
       : _dio = dio ?? ApiClient.create();
 
   final Dio _dio;
 
-  static const double _managuaLat = 12.1328;
-  static const double _managuaLon = -86.2917;
-  static const int _radiusMeters = 20000;
-  static const int _limit = 50;
+  static const int _defaultRadius = 3000; // metres — tighter for precision
+  static const int _maxResults = 5;
 
-  /// Fetches a list of places near Managua.
-  /// Returns partial [Destination] objects (no description/image).
-  Future<List<Destination>> fetchDestinationsList() async {
+  // ── Public API ──────────────────────────────────────────────────────────────
+
+  /// Finds the best OpenTripMap match near [lat]/[lon].
+  ///
+  /// Used to enrich Gemini-curated destinations with OTM data.
+  Future<Destination?> fetchByCoordinates({
+    required double lat,
+    required double lon,
+    required String name,
+    required String category,
+    required String highlight,
+    int radius = _defaultRadius,
+  }) async {
     try {
       final response = await _dio.get<dynamic>(
         'places/radius',
         queryParameters: {
-          'radius': _radiusMeters,
-          'lon': _managuaLon,
-          'lat': _managuaLat,
-          'kinds': 'interesting_places',
-          'limit': _limit,
+          'radius': radius,
+          'lon': lon,
+          'lat': lat,
+          'kinds': _categoryToKinds(category),
+          'limit': _maxResults,
           'format': 'json',
           'apikey': ApiClient.apiKey,
         },
       );
 
       final data = response.data;
-      if (data is! List) {
-        throw RemoteDataSourceException('Invalid response: expected list');
-      }
+      if (data is! List || data.isEmpty) return null;
 
-      return _parsePlaceList(data);
+      // Pick the closest item (first one returned by OTM radius search)
+      for (final item in data) {
+        if (item is! Map<String, dynamic>) continue;
+        final xid = item['xid'] as String?;
+        if (xid == null || xid.isEmpty) continue;
+
+        // Fetch full details for this xid
+        final details = await _fetchDetails(
+          xid: xid,
+          fallbackName: name,
+          fallbackLat: lat,
+          fallbackLon: lon,
+          category: category,
+          highlight: highlight,
+        );
+        if (details != null) return details;
+      }
+      return null;
     } on DioException catch (e) {
       throw _translateDioException(e);
     }
   }
 
+  /// Fetches full details for a place by xid.
+  /// Retries with exponential backoff on 429 (rate limit) responses.
+  Future<Destination?> fetchPlaceDetails(
+    String xid, {
+    String fallbackName = '',
+    double fallbackLat = 0.0,
+    double fallbackLon = 0.0,
+    String fallbackCategory = 'place',
+    String fallbackHighlight = '',
+  }) async {
+    return _fetchDetails(
+      xid: xid,
+      fallbackName: fallbackName,
+      fallbackLat: fallbackLat,
+      fallbackLon: fallbackLon,
+      category: fallbackCategory,
+      highlight: fallbackHighlight,
+    );
+  }
+
+  // ── Private ─────────────────────────────────────────────────────────────────
+
   static const int _maxRetries = 3;
   static const Duration _retryBaseDelay = Duration(seconds: 2);
 
-  /// Fetches full details for a place by xid.
-  /// Retries with exponential backoff on 429 (rate limit) responses.
-  Future<Destination> fetchPlaceDetails(String xid) async {
+  Future<Destination?> _fetchDetails({
+    required String xid,
+    required String fallbackName,
+    required double fallbackLat,
+    required double fallbackLon,
+    required String category,
+    required String highlight,
+  }) async {
     for (var attempt = 0; attempt <= _maxRetries; attempt++) {
       try {
         final response = await _dio.get<Map<String, dynamic>>(
@@ -67,70 +118,45 @@ class DestinationsRemoteDataSource {
         );
 
         final data = response.data;
-        if (data == null) {
-          throw RemoteDataSourceException('Empty response for xid: $xid');
-        }
+        if (data == null) return null;
 
-        return _parsePlaceDetails(data, xid);
+        return _parsePlaceDetails(
+          data,
+          xid: xid,
+          fallbackName: fallbackName,
+          fallbackLat: fallbackLat,
+          fallbackLon: fallbackLon,
+          category: category,
+          highlight: highlight,
+        );
       } on DioException catch (e) {
         if (e.response?.statusCode == 429 && attempt < _maxRetries) {
           await Future<void>.delayed(_retryBaseDelay * (attempt + 1));
           continue;
         }
+        // Non-404 errors bubble up; 404 means no match found
+        if (e.response?.statusCode == 404) return null;
         throw _translateDioException(e);
       }
     }
-    throw RemoteDataSourceException('Max retries exceeded for xid: $xid');
+    return null;
   }
 
-  List<Destination> _parsePlaceList(List<dynamic> items) {
-    final result = <Destination>[];
-    for (final item in items) {
-      if (item is! Map<String, dynamic>) continue;
-      final dest = _parsePlaceListItem(item);
-      if (dest != null) result.add(dest);
-    }
-    return result;
-  }
-
-  Destination? _parsePlaceListItem(Map<String, dynamic> json) {
-    final xid = json['xid'] as String?;
-    final name = json['name'] as String?;
+  Destination _parsePlaceDetails(
+    Map<String, dynamic> json, {
+    required String xid,
+    required String fallbackName,
+    required double fallbackLat,
+    required double fallbackLon,
+    required String category,
+    required String highlight,
+  }) {
+    final name = (json['name'] as String?)?.trim();
     final point = json['point'] as Map<String, dynamic>?;
-    if (xid == null || name == null || point == null) return null;
+    final lat = _parseDouble(point?['lat']) ?? fallbackLat;
+    final lon = _parseDouble(point?['lon']) ?? fallbackLon;
 
-    final lat = _parseDouble(point['lat']);
-    final lon = _parseDouble(point['lon']);
-    if (lat == null || lon == null) return null;
-
-    final kinds = json['kinds'];
-    final category = _kindsToCategory(kinds);
-
-    return Destination(
-      xid: xid,
-      name: name,
-      description: null,
-      imageUrl: null,
-      category: category,
-      latitude: lat,
-      longitude: lon,
-      address: null,
-      url: null,
-      wikipedia: null,
-      osm: null,
-      rate: _parseDouble(json['rate']),
-    );
-  }
-
-  Destination _parsePlaceDetails(Map<String, dynamic> json, String xid) {
-    final name = json['name'] as String? ?? '';
-    final point = json['point'] as Map<String, dynamic>?;
-    final lat = _parseDouble(point?['lat']) ?? 0.0;
-    final lon = _parseDouble(point?['lon']) ?? 0.0;
-    final kinds = json['kinds'];
-    final category = _kindsToCategory(kinds);
-
-    final description = json['description'] as String?;
+    final description = (json['description'] as String?)?.trim();
     final imageUrl = _extractImageUrl(json);
     final address = _formatAddress(json['address']);
     final url = json['url'] as String?;
@@ -140,8 +166,10 @@ class DestinationsRemoteDataSource {
 
     return Destination(
       xid: xid,
-      name: name,
-      description: description,
+      name: (name != null && name.isNotEmpty) ? name : fallbackName,
+      description: (description != null && description.isNotEmpty)
+          ? description
+          : null,
       imageUrl: imageUrl,
       category: category,
       latitude: lat,
@@ -151,16 +179,33 @@ class DestinationsRemoteDataSource {
       wikipedia: wikipedia,
       osm: osm,
       rate: rate,
+      highlight: highlight,
+      aiTips: null,
     );
   }
 
-  String _kindsToCategory(dynamic kinds) {
-    if (kinds == null) return 'place';
-    if (kinds is String) return kinds.split(',').first.trim();
-    if (kinds is List && kinds.isNotEmpty) {
-      return (kinds.first as String?) ?? 'place';
+  // ── Helpers ─────────────────────────────────────────────────────────────────
+
+  /// Map our category strings to OTM kinds.
+  String _categoryToKinds(String category) {
+    switch (category) {
+      case 'naturaleza':
+        return 'natural,national_parks';
+      case 'cultura':
+        return 'cultural,museums';
+      case 'historia':
+        return 'historic,architecture';
+      case 'playa':
+        return 'beaches';
+      case 'aventura':
+        return 'sport,amusements';
+      case 'gastronomia':
+        return 'foods';
+      case 'ciudad':
+        return 'historic,architecture,cultural';
+      default:
+        return 'interesting_places';
     }
-    return 'place';
   }
 
   double? _parseDouble(dynamic value) {
@@ -186,7 +231,7 @@ class DestinationsRemoteDataSource {
     if (address is String) return address.isEmpty ? null : address;
     if (address is Map<String, dynamic>) {
       final parts = <String>[];
-      for (final key in ['road', 'house_number', 'city', 'state', 'country']) {
+      for (final key in ['road', 'house_number', 'suburb', 'city', 'state', 'country']) {
         final v = address[key];
         if (v != null && v.toString().isNotEmpty) {
           parts.add(v.toString());
@@ -199,33 +244,23 @@ class DestinationsRemoteDataSource {
 
   RemoteDataSourceException _translateDioException(DioException e) {
     final statusCode = e.response?.statusCode;
-    final message = e.message ?? 'Unknown error';
-
-    if (statusCode != null) {
-      if (statusCode == 401) {
-        return RemoteDataSourceException('Invalid or missing API key');
-      }
-      if (statusCode == 429) {
-        return RemoteDataSourceException('Rate limit exceeded. Try again later.');
-      }
-      if (statusCode >= 500) {
-        return RemoteDataSourceException('Server error. Try again later.');
-      }
-      if (statusCode == 404) {
-        return RemoteDataSourceException('Place not found');
-      }
+    if (statusCode == 401) {
+      return RemoteDataSourceException('Invalid or missing OpenTripMap API key');
     }
-
+    if (statusCode == 429) {
+      return RemoteDataSourceException('Rate limit exceeded. Try again later.');
+    }
+    if (statusCode != null && statusCode >= 500) {
+      return RemoteDataSourceException('OpenTripMap server error. Try again later.');
+    }
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout ||
         e.type == DioExceptionType.sendTimeout) {
       return RemoteDataSourceException('Connection timeout. Check your network.');
     }
-
     if (e.type == DioExceptionType.connectionError) {
       return RemoteDataSourceException('No internet connection');
     }
-
-    return RemoteDataSourceException(message);
+    return RemoteDataSourceException(e.message ?? 'Unknown error');
   }
 }

@@ -48,6 +48,9 @@ dependencies:
   json_annotation: ^4.11.0
   get_it: ^9.2.1
   connectivity_plus: ^7.0.0
+  google_fonts: ^6.2.1
+  shimmer: ^3.0.0
+  flutter_staggered_animations: ^1.1.1
 
 dev_dependencies:
   flutter_test:
