@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-/// Centralized Dio clients for OpenTripMap and Gemini APIs.
+/// Centralized Dio clients for all external APIs.
 class ApiClient {
   ApiClient._();
 
@@ -11,7 +11,6 @@ class ApiClient {
 
   static Dio? _otmInstance;
 
-  /// Returns a configured Dio instance for OpenTripMap.
   static Dio create() {
     if (_otmInstance != null) return _otmInstance!;
     _otmInstance = Dio(
@@ -24,7 +23,6 @@ class ApiClient {
     return _otmInstance!;
   }
 
-  /// OpenTripMap API key from .env.
   static String get apiKey => dotenv.env['OPENTRIPMAP_API_KEY'] ?? '';
 
   // Gemini
@@ -34,7 +32,6 @@ class ApiClient {
 
   static Dio? _geminiInstance;
 
-  /// Returns a configured Dio instance for Gemini REST API.
   static Dio createGemini() {
     if (_geminiInstance != null) return _geminiInstance!;
     _geminiInstance = Dio(
@@ -44,11 +41,52 @@ class ApiClient {
         receiveTimeout: const Duration(seconds: 60),
         headers: {'Content-Type': 'application/json'},
       ),
-    )..interceptors.add(LogInterceptor(requestBody: false, responseBody: false));
+    )..interceptors
+        .add(LogInterceptor(requestBody: false, responseBody: false));
     return _geminiInstance!;
   }
 
-  /// Gemini API key from .env.
   static String get geminiApiKey =>
       dotenv.env['GOOGLE_GENERATIVE_AI_API_KEY'] ?? '';
+
+  // Nominatim (OSM geocoding — requires User-Agent)
+
+  static const String _nominatimBaseUrl = 'https://nominatim.openstreetmap.org/';
+
+  static Dio? _nominatimInstance;
+
+  static Dio createNominatim() {
+    if (_nominatimInstance != null) return _nominatimInstance!;
+    _nominatimInstance = Dio(
+      BaseOptions(
+        baseUrl: _nominatimBaseUrl,
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 15),
+        // Nominatim requires a valid User-Agent identifying the app
+        headers: {
+          'User-Agent': 'DestinosTuristicosApp/1.0 (enriquemdev@gmail.com)',
+          'Accept-Language': 'es',
+        },
+      ),
+    );
+    return _nominatimInstance!;
+  }
+
+  // Wikidata
+
+  static const String _wikidataBaseUrl = 'https://www.wikidata.org/w/';
+
+  static Dio? _wikidataInstance;
+
+  static Dio createWikidata() {
+    if (_wikidataInstance != null) return _wikidataInstance!;
+    _wikidataInstance = Dio(
+      BaseOptions(
+        baseUrl: _wikidataBaseUrl,
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 15),
+      ),
+    );
+    return _wikidataInstance!;
+  }
 }

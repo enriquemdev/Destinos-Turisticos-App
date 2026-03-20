@@ -101,6 +101,16 @@ class DatabaseHelper {
     );
   }
 
+  Future<void> updateImageUrl(String xid, String url) async {
+    final database = await db;
+    await database.update(
+      tableDestinations,
+      {'imageUrl': url},
+      where: 'xid = ?',
+      whereArgs: [xid],
+    );
+  }
+
   Future<void> deleteAll() async {
     final database = await db;
     await database.delete(tableDestinations);

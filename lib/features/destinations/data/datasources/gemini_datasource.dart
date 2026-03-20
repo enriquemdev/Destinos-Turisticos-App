@@ -4,12 +4,11 @@ import 'package:dio/dio.dart';
 
 import '../../../../core/api/api_client.dart';
 
-/// Full data for a destination returned by Gemini.
+/// Destination data returned by Gemini (excludes image — resolved via Wikidata).
 class GeminiDestinationDto {
   const GeminiDestinationDto({
     required this.name,
     required this.description,
-    required this.imageUrl,
     required this.latitude,
     required this.longitude,
     required this.category,
@@ -19,7 +18,6 @@ class GeminiDestinationDto {
 
   final String name;
   final String description;
-  final String imageUrl;
   final double latitude;
   final double longitude;
   final String category;
@@ -80,15 +78,14 @@ Responde ÚNICAMENTE con la lista numerada. Sin introducción, sin markdown.
     return _callGemini(prompt);
   }
 
-  /// Searches for Nicaragua destinations matching [query].
   Future<List<GeminiDestinationDto>> searchDestinations(String query) async {
     final prompt = '''
 Busca hasta 5 destinos turísticos de Nicaragua que coincidan con: "$query".
 
-Cada objeto DEBE tener EXACTAMENTE:
-  "name", "description", "imageUrl", "category", "highlight", "latitude", "longitude", "address"
+Cada objeto DEBE tener EXACTAMENTE estos campos:
+  "name", "description", "category", "highlight", "latitude", "longitude", "address"
 
-Responde ÚNICAMENTE con el JSON array. Array vacío [] si no hay resultados.
+Respende ÚNICAMENTE con el JSON array. Array vacío [] si no hay resultados.
 ''';
     final raw = await _callGemini(prompt);
     return _parseBatch(raw);
@@ -191,7 +188,6 @@ Responde ÚNICAMENTE con el JSON array. Array vacío [] si no hay resultados.
       return GeminiDestinationDto(
         name: name,
         description: (json['description'] as String?) ?? '',
-        imageUrl: (json['imageUrl'] as String?) ?? '',
         category: (json['category'] as String?) ?? 'lugar',
         highlight: (json['highlight'] as String?) ?? '',
         latitude: lat,

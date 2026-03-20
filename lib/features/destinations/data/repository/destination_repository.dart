@@ -4,6 +4,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../datasources/gemini_datasource.dart';
 import '../datasources/local_datasource.dart';
 import '../datasources/remote_datasource.dart';
+import '../datasources/wikimedia_datasource.dart';
 import '../models/destination_model.dart';
 import '../models/nearby_poi.dart';
 
@@ -23,13 +24,16 @@ class DestinationRepository {
     required DatabaseHelper local,
     required DestinationsRemoteDataSource remote,
     required GeminiDataSource gemini,
+    required WikimediaDataSource wikimedia,
   })  : _local = local,
         _remote = remote,
-        _gemini = gemini;
+        _gemini = gemini,
+        _wikimedia = wikimedia;
 
   final DatabaseHelper _local;
   final DestinationsRemoteDataSource _remote;
   final GeminiDataSource _gemini;
+  final WikimediaDataSource _wikimedia;
 
   // Connectivity
 
@@ -53,7 +57,7 @@ class DestinationRepository {
         xid: xid,
         name: dto.name,
         description: dto.description.isNotEmpty ? dto.description : null,
-        imageUrl: dto.imageUrl.isNotEmpty ? dto.imageUrl : null,
+        imageUrl: null, // enriched in the next step
         category: dto.category,
         latitude: dto.latitude,
         longitude: dto.longitude,
@@ -64,7 +68,32 @@ class DestinationRepository {
       );
     }).toList();
 
+    // Save first so destinations are available offline immediately
     await _local.insertAll(destinations);
+
+    // Enrich images in background — sequential to respect Nominatim rate limit
+    _enrichImagesSequentially(destinations);
+  }
+
+  /// Fetches real image URLs via Wikidata for each destination that lacks one.
+  /// Runs sequentially (1 req/sec per Nominatim policy). Fire-and-forget.
+  Future<void> _enrichImagesSequentially(
+    List<Destination> destinations,
+  ) async {
+    for (final dest in destinations) {
+      try {
+        final url = await _wikimedia.fetchImageUrl(
+          dest.name,
+          dest.latitude,
+          dest.longitude,
+        );
+        if (url != null && url.isNotEmpty) {
+          await _local.updateImageUrl(dest.xid, url);
+        }
+      } catch (_) {
+        // Non-fatal: destination already saved, just won't have an image
+      }
+    }
   }
 
   // Pagination
@@ -152,7 +181,7 @@ class DestinationRepository {
         xid: xid,
         name: dto.name,
         description: dto.description.isNotEmpty ? dto.description : null,
-        imageUrl: dto.imageUrl.isNotEmpty ? dto.imageUrl : null,
+        imageUrl: null, // enriched via Wikidata
         category: dto.category,
         latitude: dto.latitude,
         longitude: dto.longitude,
@@ -164,6 +193,7 @@ class DestinationRepository {
     }).toList();
 
     await _local.insertAll(destinations);
+    _enrichImagesSequentially(destinations);
     return destinations;
   }
 
